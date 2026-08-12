@@ -18,43 +18,52 @@
       --text-primary: #1D1D1F;
       --text-secondary: #86868B;
       --border-color: rgba(0, 0, 0, 0.08);
+      --border-focus: rgba(0, 113, 227, 0.4);
       --success-bg: #E8F5E9;
-      --success-text: #2E7D32;
+      --success-text: #1B5E20;
       --danger-bg: #FFEBEE;
       --danger-text: #C62828;
-      --radius-lg: 18px;
+      --warning-bg: #FFF8E1;
+      --warning-text: #B78103;
+      --radius-lg: 20px;
       --radius-md: 12px;
       --radius-sm: 8px;
+      --shadow-sm: 0 2px 8px rgba(0, 0, 0, 0.04);
+      --shadow-md: 0 8px 30px rgba(0, 0, 0, 0.06);
     }
 
-    * { box-sizing: border-box; }
+    * {
+      box-sizing: border-box;
+      -webkit-font-smoothing: antialiased;
+    }
 
     body {
-      font-family: -apple-system, BlinkMacSystemFont, "SF Pro Text", "SF Pro Display", "Helvetica Neue", Arial, sans-serif;
+      font-family: -apple-system, BlinkMacSystemFont, "SF Pro Display", "SF Pro Text", "Helvetica Neue", Arial, sans-serif;
       background-color: var(--bg-color);
       color: var(--text-primary);
       margin: 0;
-      padding: 30px 16px;
-      -webkit-font-smoothing: antialiased;
+      padding: 40px 20px;
+      line-height: 1.5;
     }
 
     .app-header {
       text-align: center;
       max-width: 850px;
-      margin: 0 auto 24px;
+      margin: 0 auto 32px;
     }
 
     .app-header h1 {
-      font-size: 28px;
+      font-size: 32px;
       font-weight: 700;
-      letter-spacing: -0.5px;
-      margin: 0 0 6px 0;
+      letter-spacing: -0.8px;
+      margin: 0 0 8px 0;
     }
 
     .app-header p {
       color: var(--text-secondary);
-      font-size: 15px;
+      font-size: 16px;
       margin: 0;
+      font-weight: 400;
     }
 
     .container {
@@ -62,22 +71,34 @@
       margin: 0 auto;
       display: flex;
       flex-direction: column;
-      gap: 20px;
+      gap: 24px;
     }
 
     .card {
       background: var(--card-bg);
       border-radius: var(--radius-lg);
-      padding: 24px;
-      box-shadow: 0 4px 20px rgba(0, 0, 0, 0.04), 0 1px 2px rgba(0, 0, 0, 0.02);
+      padding: 28px;
+      box-shadow: var(--shadow-md);
       border: 1px solid var(--border-color);
+      transition: transform 0.2s ease, box-shadow 0.2s ease;
     }
 
+    label.section-label {
+      font-size: 12px;
+      font-weight: 700;
+      text-transform: uppercase;
+      letter-spacing: 0.6px;
+      color: var(--text-secondary);
+      display: block;
+      margin-bottom: 8px;
+    }
+
+    /* Segmented Control */
     .segmented-control {
       display: flex;
       background: #E5E5EA;
       padding: 3px;
-      border-radius: 10px;
+      border-radius: 12px;
       margin-bottom: 20px;
     }
 
@@ -86,81 +107,135 @@
     .segmented-control label {
       flex: 1;
       text-align: center;
-      padding: 8px 12px;
+      padding: 10px 14px;
       font-size: 14px;
       font-weight: 600;
       color: var(--text-secondary);
-      border-radius: 7px;
+      border-radius: 9px;
       cursor: pointer;
-      transition: all 0.2s ease;
+      transition: all 0.2s cubic-bezier(0.16, 1, 0.3, 1);
     }
 
     .segmented-control input[type="radio"]:checked + label {
       background: #FFFFFF;
       color: var(--text-primary);
-      box-shadow: 0 2px 6px rgba(0, 0, 0, 0.12);
+      box-shadow: 0 2px 8px rgba(0, 0, 0, 0.12);
     }
 
-    label.section-label {
-      font-size: 13px;
-      font-weight: 600;
-      text-transform: uppercase;
-      letter-spacing: 0.5px;
-      color: var(--text-secondary);
-      display: block;
-      margin-bottom: 8px;
-    }
-
+    /* Form Fields */
     input[type="text"], textarea {
       width: 100%;
       border: 1px solid var(--border-color);
       border-radius: var(--radius-md);
-      padding: 12px 14px;
+      padding: 14px 16px;
       font-family: inherit;
-      font-size: 13px;
+      font-size: 14px;
       color: var(--text-primary);
       background: #FAF9F9;
-      transition: border-color 0.2s ease;
-      margin-bottom: 16px;
+      transition: all 0.2s ease;
+      margin-bottom: 20px;
     }
 
-    textarea { resize: vertical; }
+    textarea {
+      resize: vertical;
+      font-family: ui-monospace, SFMono-Regular, SF Pro Mono, Menlo, Consolas, monospace;
+      font-size: 13px;
+      line-height: 1.4;
+    }
 
     input[type="text"]:focus, textarea:focus {
       outline: none;
       border-color: var(--accent-color);
       background: #FFFFFF;
+      box-shadow: 0 0 0 4px var(--border-focus);
     }
 
+    /* Modern Buttons */
     .button-group {
       display: flex;
-      gap: 10px;
-      margin-top: 14px;
+      gap: 12px;
     }
 
     button {
       font-family: inherit;
-      font-size: 15px;
+      font-size: 14px;
       font-weight: 600;
       border-radius: 980px;
-      padding: 12px 22px;
+      padding: 12px 24px;
       border: none;
       cursor: pointer;
       transition: all 0.2s ease;
       display: inline-flex;
       align-items: center;
       justify-content: center;
-      gap: 6px;
+      gap: 8px;
     }
 
-    .btn-primary { background: var(--accent-color); color: white; flex: 2; }
+    button:active { transform: scale(0.98); }
+
+    .btn-primary { background: var(--accent-color); color: #FFFFFF; flex: 2; }
     .btn-primary:hover { background: var(--accent-hover); }
+
     .btn-secondary { background: #E8E8ED; color: var(--text-primary); flex: 1; }
     .btn-secondary:hover { background: #DCDCE0; }
 
+    /* Guide Box Drawer */
+    details {
+      background: #F9F9FB;
+      border-radius: var(--radius-md);
+      border: 1px solid var(--border-color);
+      overflow: hidden;
+      margin-bottom: 20px;
+    }
+
+    summary {
+      padding: 14px 18px;
+      font-size: 14px;
+      font-weight: 600;
+      cursor: pointer;
+      user-select: none;
+      color: var(--accent-color);
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+    }
+
+    summary:hover { background: #F0F0F4; }
+
+    .guide { padding: 4px 18px 18px; }
+
+    .guide-step {
+      font-size: 13px;
+      color: var(--text-primary);
+      margin-top: 12px;
+    }
+
+    pre {
+      background: #FFFFFF;
+      padding: 14px;
+      border-radius: var(--radius-sm);
+      border: 1px solid var(--border-color);
+      font-size: 12px;
+      overflow-x: auto;
+      font-family: ui-monospace, SFMono-Regular, SF Pro Mono, Menlo, Consolas, monospace;
+      color: #333;
+    }
+
+    .copy-button {
+      background: #E8E8ED;
+      color: var(--text-primary);
+      font-size: 12px;
+      padding: 8px 16px;
+      border-radius: var(--radius-sm);
+      margin-top: 8px;
+    }
+
+    .copy-button:hover { background: #DCDCE0; }
+
+    /* Dashboard Metrics */
     .kpi-grid {
       display: grid;
-      grid-template-columns: repeat(auto-fit, minmax(130px, 1fr));
+      grid-template-columns: repeat(auto-fit, minmax(140px, 1fr));
       gap: 12px;
       margin-top: 16px;
     }
@@ -168,57 +243,77 @@
     .kpi-card {
       background: #F9F9FB;
       border-radius: var(--radius-md);
-      padding: 14px;
+      padding: 16px;
       border: 1px solid rgba(0, 0, 0, 0.04);
     }
 
-    .kpi-label { font-size: 12px; color: var(--text-secondary); font-weight: 500; margin-bottom: 4px; }
-    .kpi-value { font-size: 18px; font-weight: 700; color: var(--text-primary); letter-spacing: -0.3px; }
+    .kpi-label { font-size: 12px; color: var(--text-secondary); font-weight: 600; margin-bottom: 4px; }
+    .kpi-value { font-size: 20px; font-weight: 700; color: var(--text-primary); letter-spacing: -0.4px; }
 
+    /* Status Banner */
     .status-banner {
-      padding: 14px 18px;
+      padding: 16px 20px;
       border-radius: var(--radius-md);
-      font-size: 14px;
+      font-size: 15px;
       font-weight: 600;
       display: flex;
       align-items: center;
       justify-content: space-between;
-      margin-bottom: 16px;
+      margin-bottom: 20px;
     }
 
     .status-banner.pass { background: var(--success-bg); color: var(--success-text); }
     .status-banner.fail { background: var(--danger-bg); color: var(--danger-text); }
 
-    .table-container { overflow-x: auto; margin-top: 16px; }
+    /* Data Tables */
+    .table-container {
+      overflow-x: auto;
+      margin-top: 14px;
+      border-radius: var(--radius-md);
+      border: 1px solid var(--border-color);
+    }
 
-    table.data-table { width: 100%; border-collapse: collapse; font-size: 13px; text-align: left; }
-    table.data-table th { padding: 10px; color: var(--text-secondary); border-bottom: 1px solid var(--border-color); font-weight: 600; }
-    table.data-table td { padding: 12px 10px; border-bottom: 1px solid rgba(0, 0, 0, 0.04); }
+    table.data-table {
+      width: 100%;
+      border-collapse: collapse;
+      font-size: 13px;
+      text-align: left;
+    }
 
-    .badge { display: inline-block; padding: 3px 8px; border-radius: 6px; font-size: 11px; font-weight: 700; }
+    table.data-table th {
+      background: #FAFAFC;
+      padding: 12px 14px;
+      color: var(--text-secondary);
+      border-bottom: 1px solid var(--border-color);
+      font-weight: 600;
+      font-size: 12px;
+      text-transform: uppercase;
+      letter-spacing: 0.3px;
+    }
+
+    table.data-table td {
+      padding: 12px 14px;
+      border-bottom: 1px solid var(--border-color);
+      background: #FFFFFF;
+    }
+
+    table.data-table tr:last-child td { border-bottom: none; }
+    table.data-table tbody tr:hover td { background: #F9F9FB; }
+
+    /* Badges */
+    .badge {
+      display: inline-block;
+      padding: 4px 8px;
+      border-radius: 6px;
+      font-size: 11px;
+      font-weight: 700;
+      letter-spacing: 0.3px;
+    }
+
     .badge-ip { background: #E3F2FD; color: #1565C0; }
     .badge-lapsed { background: #FFEBEE; color: #C62828; }
     .badge-other { background: #F5F5F5; color: #616161; }
 
-    details {
-      background: #F9F9FB;
-      border-radius: var(--radius-md);
-      border: 1px solid var(--border-color);
-      overflow: hidden;
-      margin-bottom: 16px;
-    }
-
-    summary {
-      padding: 12px 16px;
-      font-size: 14px;
-      font-weight: 600;
-      cursor: pointer;
-      user-select: none;
-      color: var(--accent-color);
-    }
-
-    .guide-content { padding: 0 16px 16px; font-size: 13px; line-height: 1.5; color: var(--text-primary); }
-    pre { background: #FFFFFF; padding: 12px; border-radius: var(--radius-sm); border: 1px solid var(--border-color); font-size: 12px; overflow-x: auto; }
     .hidden { display: none !important; }
   </style>
 </head>
@@ -231,6 +326,7 @@
 
   <main class="container">
     
+    <!-- Input Card -->
     <div class="card">
       <label class="section-label">Select Target Window</label>
       <div class="segmented-control">
@@ -241,20 +337,22 @@
         <label for="p12">12-Month Persistency</label>
       </div>
 
-      <label class="section-label" for="agentNameInput" style="display: none;">Agent Name (Optional Override)</label>
-      <input type="text" id="agentNameInput" style="display: none;" placeholder="Leave blank to extract automatically from pasted data" />
+      <label class="section-label" for="agentNameInput">Agent Name (Optional Override)</label>
+      <input type="text" id="agentNameInput" placeholder="Leave blank to extract automatically from pasted data" />
 
       <details>
-        <summary>📘 Copy ChatGPT extraction prompt</summary>
-        <div class="guide-content">
-          <p>Copy this prompt into ChatGPT to clean raw report tables:</p>
-          <pre id="hiddenPrompt">Please extract all policy details from the attached/copied Manulife report into raw CSV format.
+        <summary>📘 Show Extraction Guide</summary>
+        <div class="guide">
+          <div class="guide-step"><strong>Step 1:</strong> Open the Manulife report (PDF or scanned text).</div>
+          <div class="guide-step"><strong>Step 2:</strong> Copy the whole table content (including headers).</div>
+          <div class="guide-step"><strong>Step 3:</strong> In ChatGPT / AI Chatbot, paste the content along with this prompt:</div>
+          <pre style="margin-top: 10px; white-space: pre-wrap;"><code id="hiddenPrompt">Please extract all policy details from the attached/copied Manulife report into raw CSV format.
 
 Output Format (CSV):
 PolicyNo, AgentName, ClientName, MonthsPaid, PsistANP, Status, PremiumDueDate, PersistencyBlock, ReportDate
 
 Example Output Line:
-00999998, LEI HOU YEH, MOU TAK DENG, 10, 3600.00, LC, 14-JUL-2025, 01-JUN-2023 to 31-MAY-2024, 11/07/2025
+00999998, LOW HUI TZE, MOU TAK DENG, 10, 3600.00, LC, 14-JUL-2025, 01-JUN-2023 to 31-MAY-2024, 11/07/2025
 
 Extraction Rules:
 1. ONLY return the plain CSV lines. Do NOT include markdown code blocks (```), introductory text, explanations, or column header lines in the final output.
@@ -262,9 +360,9 @@ Extraction Rules:
 3. Extract every policy row regardless of sub-headings (e.g. "OL", "RPIL", or other issue-type groupings).
 4. PersistencyBlock = The date range near the top of the report (e.g., "01-JUN-2023 to 31-MAY-2024"). Repeat this exact value on every row.
 5. ReportDate = The report date in the top corner (e.g., "11/07/2025"). Repeat this exact value on every row.
-6. Number Formatting: Remove ALL commas/thousand separators from numeric amounts (e.g., use 3600.00, NOT 3,600.00). Keep exact decimal values.
-</pre>
-          <button type="button" class="btn-secondary" style="font-size: 12px; padding: 6px 14px;" onclick="copyPrompt()">📋 Copy Prompt</button>
+6. Number Formatting: Remove ALL commas/thousand separators from numeric amounts (e.g., use 3600.00, NOT 3,600.00). Keep exact decimal values.</code></pre>
+          <button type="button" class="copy-button" onclick="copyPrompt()">📋 Copy Prompt</button>
+          <div class="guide-step" style="margin-top: 12px;"><strong>Step 4:</strong> Copy the cleaned CSV result from the AI and paste it into the input area below.</div>
         </div>
       </details>
 
@@ -306,8 +404,8 @@ Extraction Rules:
       </div>
 
       <!-- Saveable Policies Section -->
-      <div id="saveableSection" style="margin-top: 24px;" class="hidden">
-        <label class="section-label" style="color: #D97706;">💡 Recommended Saveable Policies to Hit 85%</label>
+      <div id="saveableSection" style="margin-top: 28px;" class="hidden">
+        <label class="section-label" style="color: var(--warning-text);">💡 Recommended Saveable Policies to Hit 85%</label>
         <div class="table-container">
           <table class="data-table">
             <thead>
@@ -327,7 +425,7 @@ Extraction Rules:
       </div>
 
       <!-- Full Breakdown -->
-      <div style="margin-top: 24px;">
+      <div style="margin-top: 28px;">
         <label class="section-label">Full Policy Listing</label>
         <div class="table-container">
           <table class="data-table">
@@ -347,7 +445,11 @@ Extraction Rules:
         </div>
       </div>
 
-      <button type="button" class="btn-primary" style="margin-top: 20px; width: 100%;" onclick="downloadPDF()">📄 Download PDF Report</button>
+      <!-- Report Action Buttons -->
+      <div class="button-group" style="margin-top: 24px;">
+        <button type="button" class="btn-secondary" onclick="viewPDF()">👁️ View PDF</button>
+        <button type="button" class="btn-primary" onclick="downloadPDF()">📄 Download PDF</button>
+      </div>
     </div>
 
   </main>
@@ -362,30 +464,33 @@ Extraction Rules:
 
     let reportState = {};
 
-function sanitizeText(str) {
-  if (!str) return "";
-  return String(str)
-    // Convert common Greek OCR homoglyphs back to standard Latin letters
-    .replace(/\u0396/g, 'Z') // Greek Zeta -> Latin Z
-    .replace(/\u0395/g, 'E') // Greek Epsilon -> Latin E
-    .replace(/\u0391/g, 'A') // Greek Alpha -> Latin A
-    .replace(/\u0392/g, 'B') // Greek Beta -> Latin B
-    .replace(/\u039F/g, 'O') // Greek Omicron -> Latin O
-    .replace(/\u03A1/g, 'P') // Greek Rho -> Latin P
-    .replace(/\u03A4/g, 'T') // Greek Tau -> Latin T
-    .replace(/\u03A7/g, 'X') // Greek Chi -> Latin X
-    .replace(/[\u1680\u180E\u2000-\u200B\u202F\u205F\u3000\uFEFF\u00A0]/g, ' ')
-    .replace(/[\u2018\u2019]/g, "'")
-    .replace(/[\u201C\u201D]/g, '"')
-    .normalize("NFD").replace(/[\u0300-\u036f]/g, "")
-    .replace(/[^\x20-\x7E]/g, "")
-    .trim();
-}
-
+    function sanitizeText(str) {
+      if (!str) return "";
+      return String(str)
+        // Convert Greek OCR homoglyphs to standard Latin letters
+        .replace(/\u0396/g, 'Z')
+        .replace(/\u0395/g, 'E')
+        .replace(/\u0391/g, 'A')
+        .replace(/\u0392/g, 'B')
+        .replace(/\u039F/g, 'O')
+        .replace(/\u03A1/g, 'P')
+        .replace(/\u03A4/g, 'T')
+        .replace(/\u03A7/g, 'X')
+        .replace(/[\u1680\u180E\u2000-\u200B\u202F\u205F\u3000\uFEFF\u00A0]/g, ' ')
+        .replace(/[\u2018\u2019]/g, "'")
+        .replace(/[\u201C\u201D]/g, '"')
+        .normalize("NFD").replace(/[\u0300-\u036f]/g, "")
+        .replace(/[^\x20-\x7E]/g, "")
+        .trim();
+    }
 
     function copyPrompt() {
       const code = document.getElementById("hiddenPrompt").innerText;
-      navigator.clipboard.writeText(code).then(() => alert("Prompt copied!"));
+      navigator.clipboard.writeText(code).then(() => {
+        const btn = document.querySelector(".copy-button");
+        btn.innerText = "✓ Copied!";
+        setTimeout(() => { btn.innerText = "📋 Copy Prompt"; }, 2000);
+      });
     }
 
     function clearData() {
@@ -398,12 +503,13 @@ function sanitizeText(str) {
 
     function loadSampleData() {
       const sample = 
-`00999991, LEI HOU YEH, GAM DOU TAK, 24, 19999.98, IP, 04-OCT-2026, 01-AUG-2024 to 31-JUL-2025, 04/08/2026
-00985391, LEI HOU YEH, HOU PANG YAO, 23, 3600.00, IP, 02-JUL-2026, 01-AUG-2024 to 31-JUL-2025, 04/08/2026
-00956795, LEI HOU YEH, CHAN HOU, 17, 1749.96, LC, 01-FEB-2026, 01-AUG-2024 to 31-JUL-2025, 04/08/2026
-00908796, LEI HOU YEH, CHEUNG HOCK YAU, 20, 1599.96, TC, 01-MAY-2026, 01-AUG-2024 to 31-JUL-2025, 04/08/2026
-00982460, LEI HOU YEH, CHONG KAH FAI, 9, 3960.00, TC, 14-JUL-2025, 01-AUG-2024 to 31-JUL-2025, 04/08/2026
-00994298, LEI HOU YEH, THYE KAR JIE, 3, 4800.00, LC, 11-FEB-2025, 01-AUG-2024 to 31-JUL-2025, 04/08/2026`;
+`00961338, LOW HUI YEN, CHUA LIAN KHIM, 24, 19999.98, IP, 04-OCT-2026, 01-AUG-2024 to 31-JUL-2025, 04/08/2026
+00955391, LOW HUI YEN, CHAN LEE CHING, 23, 3600.00, IP, 02-JUL-2026, 01-AUG-2024 to 31-JUL-2025, 04/08/2026
+00958795, LOW HUI YEN, NG XIN YIE, 17, 1749.96, LC, 01-FEB-2026, 01-AUG-2024 to 31-JUL-2025, 04/08/2026
+00958796, LOW HUI YEN, NG XIN YEN, 20, 1599.96, TC, 01-MAY-2026, 01-AUG-2024 to 31-JUL-2025, 04/08/2026
+00962460, LOW HUI YEN, CHAN KIM CHENG, 9, 3960.00, TC, 14-JUL-2025, 01-AUG-2024 to 31-JUL-2025, 04/08/2026
+00964298, LOW HUI YEN, MATHAVAN A/L JALAGOBAL, 3, 4800.00, LC, 11-FEB-2025, 01-AUG-2024 to 31-JUL-2025, 04/08/2026
+00981965, LOW HUI YEN, LOW HUI TΖΕ, 12, 7320.00, IP, 12-JUN-2026, 01-AUG-2024 to 31-JUL-2025, 04/08/2026`;
       document.getElementById("dataInput").value = sample;
       calculate();
     }
@@ -434,7 +540,7 @@ function sanitizeText(str) {
     }
 
     function renderTables() {
-      // Render Saveable Policies
+      // Saveable Policies
       const saveableContainer = document.getElementById("saveableRows");
       const saveableSection = document.getElementById("saveableSection");
       
@@ -458,7 +564,7 @@ function sanitizeText(str) {
         saveableSection.classList.add("hidden");
       }
 
-      // Render All Policies
+      // All Policies
       const policyContainer = document.getElementById("policyRows");
       policyContainer.innerHTML = "";
       reportState.allPolicies.forEach(p => {
@@ -476,254 +582,251 @@ function sanitizeText(str) {
       });
     }
 
-function calculate() {
-  const raw = document.getElementById("dataInput").value.trim();
-  const manualOverrideAgent = sanitizeText(document.getElementById("agentNameInput")?.value);
-  const manualReportDate = sanitizeText(document.getElementById("reportDateInput")?.value);
-  const manualBlock = sanitizeText(document.getElementById("blockInput")?.value);
+    function calculate() {
+      const raw = document.getElementById("dataInput").value.trim();
+      const manualOverrideAgent = sanitizeText(document.getElementById("agentNameInput")?.value);
 
-  if (!raw) {
-    alert("Please paste data first.");
-    return;
-  }
+      if (!raw) {
+        alert("Please paste data first.");
+        return;
+      }
 
-  const threshold = parseInt(document.querySelector('input[name="persistencyType"]:checked').value);
-  const lines = raw.split("\n");
+      const threshold = parseInt(document.querySelector('input[name="persistencyType"]:checked').value);
+      const lines = raw.split("\n");
 
-  let totalANP = 0;
-  let persistedANP = 0;
-  let unpersistedCandidates = [];
-  let allPolicies = [];
-  let extractedReportDate = "";
-  let extractedBlock = "";
-  let extractedAgentName = "";
+      let totalANP = 0;
+      let persistedANP = 0;
+      let unpersistedCandidates = [];
+      let allPolicies = [];
+      let extractedReportDate = "";
+      let extractedBlock = "";
+      let extractedAgentName = "";
 
-  for (let line of lines) {
-    if (!line.trim()) continue;
+      for (let line of lines) {
+        if (!line.trim()) continue;
 
-    const parts = line.split(/,|\t/).map(s => sanitizeText(s));
-    if (parts.length < 4) continue;
+        const parts = line.split(/,|\t/).map(s => sanitizeText(s));
+        if (parts.length < 4) continue;
 
-    let policyNo = "";
-    let agent = "";
-    let clientName = "";
-    let monthsPaidStr = "";
-    let anpStr = "";
-    let status = "";
-    let premiumDueDate = "";
-    let blockStr = "";
-    let reportDateStr = "";
+        let policyNo = "";
+        let agent = "";
+        let clientName = "";
+        let monthsPaidStr = "";
+        let anpStr = "";
+        let status = "";
+        let premiumDueDate = "";
+        let blockStr = "";
+        let reportDateStr = "";
 
-    // Position extraction based on column count
-    if (parts.length >= 9) {
-      [policyNo, agent, clientName, monthsPaidStr, anpStr, status, premiumDueDate, blockStr, reportDateStr] = parts;
-    } else if (parts.length === 8) {
-      [policyNo, clientName, monthsPaidStr, anpStr, status, premiumDueDate, blockStr, reportDateStr] = parts;
-      agent = manualOverrideAgent || extractedAgentName || "N/A";
-    } else {
-      [policyNo, agent, clientName, monthsPaidStr, anpStr, status, premiumDueDate] = parts;
+        if (parts.length >= 9) {
+          [policyNo, agent, clientName, monthsPaidStr, anpStr, status, premiumDueDate, blockStr, reportDateStr] = parts;
+        } else if (parts.length === 8) {
+          [policyNo, clientName, monthsPaidStr, anpStr, status, premiumDueDate, blockStr, reportDateStr] = parts;
+          agent = manualOverrideAgent || extractedAgentName || "N/A";
+        } else {
+          [policyNo, agent, clientName, monthsPaidStr, anpStr, status, premiumDueDate] = parts;
+        }
+
+        const monthsPaid = parseInt(monthsPaidStr);
+        const anp = parseFloat(anpStr ? anpStr.replace(/,/g, '') : "0");
+
+        if (isNaN(anp) || isNaN(monthsPaid) || anp <= 0) continue;
+
+        if (!extractedAgentName && agent && agent !== "N/A" && !/agent/i.test(agent)) {
+          extractedAgentName = agent;
+        }
+        if (!extractedReportDate && reportDateStr && !/report\s*date/i.test(reportDateStr)) {
+          extractedReportDate = reportDateStr;
+        }
+        if (!extractedBlock && blockStr && !/block/i.test(blockStr)) {
+          extractedBlock = blockStr;
+        }
+
+        const policyObj = { 
+          policyNo, 
+          agentName: agent || manualOverrideAgent || "N/A", 
+          clientName: clientName || "N/A", 
+          monthsPaid, 
+          anp, 
+          status: (status || "UNKNOWN").toUpperCase(), 
+          premiumDueDate: premiumDueDate || "N/A" 
+        };
+
+        allPolicies.push(policyObj);
+        totalANP += anp;
+
+        if (monthsPaid >= threshold) {
+          persistedANP += anp;
+        } else {
+          unpersistedCandidates.push(policyObj);
+        }
+      }
+
+      const finalAgentName = manualOverrideAgent || extractedAgentName || "N/A";
+      const finalReportDate = extractedReportDate || "N/A";
+      const finalBlock = extractedBlock || "N/A";
+
+      allPolicies.forEach(p => {
+        if (!p.agentName || p.agentName === "N/A") {
+          p.agentName = finalAgentName;
+        }
+      });
+
+      const persistencyRaw = totalANP === 0 ? 0 : (persistedANP / totalANP) * 100;
+      const roundedPersistency = manulifeRound(persistencyRaw);
+      const targetANP = totalANP * 0.85;
+      const shortfall = Math.max(targetANP - persistedANP, 0);
+
+      // Prioritized Saveable Policies Selection
+      let saveable = [];
+      if (shortfall > 0 && unpersistedCandidates.length > 0) {
+        unpersistedCandidates.sort((a, b) => {
+          const prio = { "IP": 1, "LA": 2, "LC": 2 };
+          const pa = prio[a.status] || 99;
+          const pb = prio[b.status] || 99;
+          if (pa !== pb) return pa - pb;
+          if (b.monthsPaid !== a.monthsPaid) return b.monthsPaid - a.monthsPaid;
+          return b.anp - a.anp;
+        });
+
+        let added = 0;
+        for (let p of unpersistedCandidates) {
+          if (added >= shortfall) break;
+          saveable.push(p);
+          added += p.anp;
+        }
+      }
+
+      reportState = {
+        agentName: finalAgentName,
+        totalANP, persistedANP, roundedPersistency, shortfall,
+        allPolicies, recommendedSaveable: saveable,
+        reportDate: finalReportDate, 
+        block: finalBlock, 
+        threshold
+      };
+
+      const kpiAgentEl = document.getElementById("kpiAgentName");
+      if (kpiAgentEl) kpiAgentEl.textContent = finalAgentName;
+
+      document.getElementById("kpiTotalANP").textContent = `RM ${totalANP.toLocaleString(undefined, {minimumFractionDigits: 2})}`;
+      document.getElementById("kpiPersistedANP").textContent = `RM ${persistedANP.toLocaleString(undefined, {minimumFractionDigits: 2})}`;
+      document.getElementById("kpiPersistency").textContent = `${roundedPersistency}%`;
+      document.getElementById("kpiShortfall").textContent = shortfall > 0 ? `RM ${shortfall.toLocaleString(undefined, {minimumFractionDigits: 2})}` : "RM 0.00";
+
+      renderStatusBanner(roundedPersistency, shortfall);
+      renderTables();
+      document.getElementById("resultsCard").classList.remove("hidden");
     }
 
-    const monthsPaid = parseInt(monthsPaidStr);
-    const anp = parseFloat(anpStr ? anpStr.replace(/,/g, '') : "0");
+    // Shared PDF Generator
+    function generatePDFDoc() {
+      if (!reportState.allPolicies) return null;
 
-    // 1. SKIP HEADER ROWS OR INVALID DATA LINES FIRST
-    if (isNaN(anp) || isNaN(monthsPaid) || anp <= 0) continue;
+      const { jsPDF } = window.jspdf;
+      const doc = new jsPDF("p", "mm", "a4");
 
-    // 2. EXTRACT METADATA ONLY FROM VALID DATA ROWS
-    if (!extractedAgentName && agent && agent !== "N/A" && !/agent/i.test(agent)) {
-      extractedAgentName = agent;
+      const safeAgent = sanitizeText(reportState.agentName) || "N/A";
+      const safeReportDate = sanitizeText(reportState.reportDate) || "N/A";
+      const safeBlock = sanitizeText(reportState.block) || "N/A";
+
+      doc.setFontSize(18);
+      doc.setFont("helvetica", "bold");
+      doc.text("Persistency Performance Report", 14, 20);
+
+      doc.setFontSize(10);
+      doc.setFont("helvetica", "normal");
+      doc.setTextColor(100);
+      doc.text(`Agent: ${safeAgent} | Report Date: ${safeReportDate} | Block: ${safeBlock}`, 14, 26);
+
+      doc.autoTable({
+        startY: 32,
+        head: [["Metric", "Value"]],
+        body: [
+          ["Agent Name", safeAgent],
+          ["Report Date", safeReportDate],
+          ["Persistency Block", safeBlock],
+          ["Total ANP", `RM ${reportState.totalANP.toLocaleString(undefined, {minimumFractionDigits: 2})}`],
+          ["Persisted ANP", `RM ${reportState.persistedANP.toLocaleString(undefined, {minimumFractionDigits: 2})}`],
+          [`Persistency % (${reportState.threshold}-Month)`, `${reportState.roundedPersistency}%`],
+          ["Status Target (85%)", reportState.shortfall > 0 ? "NOT MET" : "MET"],
+          ["ANP Shortfall", `RM ${reportState.shortfall.toLocaleString(undefined, {minimumFractionDigits: 2})}`]
+        ],
+        theme: "striped",
+        headStyles: { fillColor: [0, 113, 227] }
+      });
+
+      let currentY = doc.lastAutoTable.finalY + 10;
+
+      if (reportState.recommendedSaveable && reportState.recommendedSaveable.length > 0) {
+        doc.setFontSize(12);
+        doc.setFont("helvetica", "bold");
+        doc.setTextColor(217, 119, 6);
+        doc.text("Recommended Saveable Policies (To Hit 85% Target)", 14, currentY);
+
+        const saveableRows = reportState.recommendedSaveable.map(p => [
+          sanitizeText(p.policyNo),
+          sanitizeText(p.agentName),
+          sanitizeText(p.clientName),
+          `RM ${p.anp.toLocaleString(undefined, {minimumFractionDigits: 2})}`,
+          p.monthsPaid,
+          sanitizeText(statusLabels[p.status] || p.status),
+          sanitizeText(p.premiumDueDate)
+        ]);
+
+        doc.autoTable({
+          startY: currentY + 4,
+          head: [["Policy No", "Agent", "Client Name", "ANP", "Mths Paid", "Status", "Premium Due Date"]],
+          body: saveableRows,
+          theme: "grid",
+          styles: { fontSize: 8, font: "helvetica" },
+          headStyles: { fillColor: [217, 119, 6], textColor: [255, 255, 255] }
+        });
+
+        currentY = doc.lastAutoTable.finalY + 10;
+      }
+
+      doc.setFontSize(12);
+      doc.setFont("helvetica", "bold");
+      doc.setTextColor(0, 0, 0);
+      doc.text("Full Policy Listing", 14, currentY);
+
+      const fullRows = reportState.allPolicies.map(p => [
+        sanitizeText(p.policyNo),
+        sanitizeText(p.agentName),
+        sanitizeText(p.clientName),
+        `RM ${p.anp.toLocaleString(undefined, {minimumFractionDigits: 2})}`,
+        p.monthsPaid,
+        sanitizeText(statusLabels[p.status] || p.status),
+        sanitizeText(p.premiumDueDate)
+      ]);
+
+      doc.autoTable({
+        startY: currentY + 4,
+        head: [["Policy No", "Agent", "Client Name", "ANP", "Mths Paid", "Status", "Premium Due Date"]],
+        body: fullRows,
+        theme: "grid",
+        styles: { fontSize: 8, font: "helvetica" },
+        headStyles: { fillColor: [230, 230, 230], textColor: [0, 0, 0] }
+      });
+
+      return doc;
     }
 
-    if (!extractedReportDate && reportDateStr && !/report\s*date/i.test(reportDateStr)) {
-      extractedReportDate = reportDateStr;
+    function viewPDF() {
+      const doc = generatePDFDoc();
+      if (!doc) return;
+      window.open(doc.output("bloburl"), "_blank");
     }
 
-    if (!extractedBlock && blockStr && !/block/i.test(blockStr)) {
-      extractedBlock = blockStr;
+    function downloadPDF() {
+      const doc = generatePDFDoc();
+      if (!doc) return;
+      const safeAgent = sanitizeText(reportState.agentName) || "N/A";
+      doc.save(`Persistency_Report_${safeAgent.replace(/\s+/g, '_')}_${new Date().toISOString().slice(0,10)}.pdf`);
     }
 
-    const policyObj = { 
-      policyNo, 
-      agentName: agent || manualOverrideAgent || "N/A", 
-      clientName: clientName || "N/A", 
-      monthsPaid, 
-      anp, 
-      status: (status || "UNKNOWN").toUpperCase(), 
-      premiumDueDate: premiumDueDate || "N/A" 
-    };
-
-    allPolicies.push(policyObj);
-    totalANP += anp;
-
-    if (monthsPaid >= threshold) {
-      persistedANP += anp;
-    } else {
-      unpersistedCandidates.push(policyObj);
-    }
-  }
-
-  const finalAgentName = manualOverrideAgent || extractedAgentName || "N/A";
-  const finalReportDate = manualReportDate || extractedReportDate || "N/A";
-  const finalBlock = manualBlock || extractedBlock || "N/A";
-
-  allPolicies.forEach(p => {
-    if (!p.agentName || p.agentName === "N/A") {
-      p.agentName = finalAgentName;
-    }
-  });
-
-  const persistencyRaw = totalANP === 0 ? 0 : (persistedANP / totalANP) * 100;
-  const roundedPersistency = manulifeRound(persistencyRaw);
-  const targetANP = totalANP * 0.85;
-  const shortfall = Math.max(targetANP - persistedANP, 0);
-
-  // Recommended Saveable Policies
-  let saveable = [];
-  if (shortfall > 0 && unpersistedCandidates.length > 0) {
-    unpersistedCandidates.sort((a, b) => {
-      const prio = { "IP": 1, "LA": 2, "LC": 2 };
-      const pa = prio[a.status] || 99;
-      const pb = prio[b.status] || 99;
-      if (pa !== pb) return pa - pb;
-      if (b.monthsPaid !== a.monthsPaid) return b.monthsPaid - a.monthsPaid;
-      return b.anp - a.anp;
-    });
-
-    let added = 0;
-    for (let p of unpersistedCandidates) {
-      if (added >= shortfall) break;
-      saveable.push(p);
-      added += p.anp;
-    }
-  }
-
-  // Save to State
-  reportState = {
-    agentName: finalAgentName,
-    totalANP, persistedANP, roundedPersistency, shortfall,
-    allPolicies, recommendedSaveable: saveable,
-    reportDate: finalReportDate, 
-    block: finalBlock, 
-    threshold
-  };
-
-  // UI Updates
-  const kpiAgentEl = document.getElementById("kpiAgentName");
-  if (kpiAgentEl) {
-    kpiAgentEl.textContent = finalAgentName;
-  }
-
-  document.getElementById("kpiTotalANP").textContent = `RM ${totalANP.toLocaleString(undefined, {minimumFractionDigits: 2})}`;
-  document.getElementById("kpiPersistedANP").textContent = `RM ${persistedANP.toLocaleString(undefined, {minimumFractionDigits: 2})}`;
-  document.getElementById("kpiPersistency").textContent = `${roundedPersistency}%`;
-  document.getElementById("kpiShortfall").textContent = shortfall > 0 ? `RM ${shortfall.toLocaleString(undefined, {minimumFractionDigits: 2})}` : "RM 0.00";
-
-  renderStatusBanner(roundedPersistency, shortfall);
-  renderTables();
-  document.getElementById("resultsCard").classList.remove("hidden");
-}
-
-
-function downloadPDF() {
-  if (!reportState.allPolicies) return;
-
-  const { jsPDF } = window.jspdf;
-  const doc = new jsPDF("p", "mm", "a4");
-
-  const safeAgent = sanitizeText(reportState.agentName) || "N/A";
-  const safeReportDate = sanitizeText(reportState.reportDate) || "N/A";
-  const safeBlock = sanitizeText(reportState.block) || "N/A";
-
-  // Title Section
-  doc.setFontSize(18);
-  doc.setFont("helvetica", "bold");
-  doc.text("Persistency Performance Report", 14, 20);
-
-  // Sub-Header Metadata Line (Evaluated dynamically)
-  doc.setFontSize(10);
-  doc.setFont("helvetica", "normal");
-  doc.setTextColor(100);
-  doc.text(`Agent: ${safeAgent} | Report Date: ${safeReportDate} | Block: ${safeBlock}`, 14, 26);
-
-  // Summary Table
-  doc.autoTable({
-    startY: 32,
-    head: [["Summary", ""]],
-    body: [
-      ["Agent Name", safeAgent],
-      ["Report Date", safeReportDate],
-      ["Persistency Block", safeBlock],
-      ["Total ANP", `RM ${reportState.totalANP.toLocaleString(undefined, {minimumFractionDigits: 2})}`],
-      ["Persisted ANP", `RM ${reportState.persistedANP.toLocaleString(undefined, {minimumFractionDigits: 2})}`],
-      [`Persistency % (${reportState.threshold}-Month)`, `${reportState.roundedPersistency}%`],
-      ["Status Target (85%)", reportState.shortfall > 0 ? "NOT MET" : "MET"],
-      ["ANP Shortfall", `RM ${reportState.shortfall.toLocaleString(undefined, {minimumFractionDigits: 2})}`]
-    ],
-    theme: "striped",
-    headStyles: { fillColor: [0, 113, 227] }
-  });
-
-  let currentY = doc.lastAutoTable.finalY + 10;
-
-  // Saveable Policies Table
-  if (reportState.recommendedSaveable && reportState.recommendedSaveable.length > 0) {
-    doc.setFontSize(12);
-    doc.setFont("helvetica", "bold");
-    doc.setTextColor(217, 119, 6);
-    doc.text("Recommended Saveable Policies (To Hit 85% Target)", 14, currentY);
-
-    const saveableRows = reportState.recommendedSaveable.map(p => [
-      sanitizeText(p.policyNo),
-      sanitizeText(p.agentName),
-      sanitizeText(p.clientName),
-      `RM ${p.anp.toLocaleString(undefined, {minimumFractionDigits: 2})}`,
-      p.monthsPaid,
-      sanitizeText(statusLabels[p.status] || p.status),
-      sanitizeText(p.premiumDueDate)
-    ]);
-
-    doc.autoTable({
-      startY: currentY + 4,
-      head: [["Policy No", "Agent", "Client Name", "ANP", "Mths Paid", "Status", "Premium Due Date"]],
-      body: saveableRows,
-      theme: "grid",
-      styles: { fontSize: 8, font: "helvetica" },
-      headStyles: { fillColor: [217, 119, 6], textColor: [255, 255, 255] }
-    });
-
-    currentY = doc.lastAutoTable.finalY + 10;
-  }
-
-  // Full Policy Listing Table
-  doc.setFontSize(12);
-  doc.setFont("helvetica", "bold");
-  doc.setTextColor(0, 0, 0);
-  doc.text("Full Policy Listing", 14, currentY);
-
-  const fullRows = reportState.allPolicies.map(p => [
-    sanitizeText(p.policyNo),
-    sanitizeText(p.agentName),
-    sanitizeText(p.clientName),
-    `RM ${p.anp.toLocaleString(undefined, {minimumFractionDigits: 2})}`,
-    p.monthsPaid,
-    sanitizeText(statusLabels[p.status] || p.status),
-    sanitizeText(p.premiumDueDate)
-  ]);
-
-  doc.autoTable({
-    startY: currentY + 4,
-    head: [["Policy No", "Agent", "Client Name", "ANP", "Mths Paid", "Status", "Premium Due Date"]],
-    body: fullRows,
-    theme: "grid",
-    styles: { fontSize: 8, font: "helvetica" },
-    headStyles: { fillColor: [230, 230, 230], textColor: [0, 0, 0] }
-  });
-
-  doc.save(`Persistency_Report_${safeAgent.replace(/\s+/g, '_')}_${new Date().toISOString().slice(0,10)}.pdf`);
-}
-
-
+    // Local Storage Hydration
     window.addEventListener('DOMContentLoaded', () => {
       const dataInputEl = document.getElementById('dataInput');
       const agentInputEl = document.getElementById('agentNameInput');
