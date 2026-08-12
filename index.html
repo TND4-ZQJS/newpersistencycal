@@ -401,184 +401,120 @@ Note: Skip total summary rows. Remove commas from numbers.</pre>
       return `<span class="badge badge-other">${status}</span>`;
     }
 
-    function calculate() {
-      const raw = document.getElementById("dataInput").value.trim();
-      const manualOverrideAgent = sanitizeText(document.getElementById("agentNameInput").value);
+function calculate() {
+  const raw = document.getElementById("dataInput").value.trim();
+  const manualOverrideAgent = sanitizeText(document.getElementById("agentNameInput").value);
 
-      if (!raw) {
-        alert("Please paste data first.");
-        return;
-      }
+  if (!raw) {
+    alert("Please paste data first.");
+    return;
+  }
 
-      const threshold = parseInt(document.querySelector('input[name="persistencyType"]:checked').value);
-      const lines = raw.split("\n");
+  const threshold = parseInt(document.querySelector('input[name="persistencyType"]:checked').value);
+  const lines = raw.split("\n");
 
-      let totalANP = 0;
-      let persistedANP = 0;
-      let saveable = [];
-      let allPolicies = [];
-      let reportDate = "";
-      let block = "";
-      let extractedAgentName = "";
+  let totalANP = 0;
+  let persistedANP = 0;
+  let saveable = [];
+  let allPolicies = [];
+  let reportDate = "";
+  let block = "";
+  let extractedAgentName = "";
 
-      for (let line of lines) {
-        const parts = line.split(/,|\t/).map(s => sanitizeText(s)).filter(Boolean);
-        if (parts.length < 4) continue;
+  for (let line of lines) {
+    const parts = line.split(/,|\t/).map(s => sanitizeText(s)).filter(Boolean);
+    if (parts.length < 4) continue;
 
-        let policyNo, agent, clientName, monthsPaidStr, anpStr, status, premiumDueDate, blockStr, reportDateStr;
+    let policyNo, agent, clientName, monthsPaidStr, anpStr, status, premiumDueDate, blockStr, reportDateStr;
 
-        if (parts.length >= 9) {
-          [policyNo, agent, clientName, monthsPaidStr, anpStr, status, premiumDueDate, blockStr, reportDateStr] = parts;
-        } else if (parts.length === 8) {
-          [policyNo, clientName, monthsPaidStr, anpStr, status, premiumDueDate, blockStr, reportDateStr] = parts;
-          agent = manualOverrideAgent || extractedAgentName || "N/A";
-        } else {
-          policyNo = parts[0];
-          agent = manualOverrideAgent || parts[1] || "N/A";
-          clientName = parts[1] || "N/A";
-          monthsPaidStr = parts[2];
-          anpStr = parts[3];
-          status = parts[4] || "UNKNOWN";
-          premiumDueDate = parts[5] || "N/A";
-          blockStr = parts[6] || "";
-          reportDateStr = parts[7] || "";
-        }
-
-        const monthsPaid = parseInt(monthsPaidStr);
-        const anp = parseFloat(anpStr ? anpStr.replace(/,/g, '') : "0");
-
-        // Extract and capture the first valid agent name found in the data
-        if (!extractedAgentName && agent && agent !== "N/A") {
-          extractedAgentName = agent;
-        }
-
-        if (!reportDate && reportDateStr) reportDate = reportDateStr;
-        if (!block && blockStr) block = blockStr;
-
-        if (isNaN(anp) || anp <= 0 || isNaN(monthsPaid)) continue;
-
-        const policyObj = { 
-          policyNo, 
-          agentName: agent || manualOverrideAgent || extractedAgentName || "N/A", 
-          clientName, 
-          monthsPaid, 
-          anp, 
-          status: status.toUpperCase(), 
-          premiumDueDate 
-        };
-        allPolicies.push(policyObj);
-        totalANP += anp;
-
-        if (monthsPaid >= threshold) {
-          persistedANP += anp;
-        } else {
-          saveable.push(policyObj);
-        }
-      }
-
-      if (allPolicies.length === 0) {
-        alert("No valid policy data could be parsed. Check data format.");
-        return;
-      }
-
-      // Priority of Agent Name selection: Manual Override -> Extracted from CSV -> Default Fallback
-      const finalAgentName = manualOverrideAgent || extractedAgentName || "N/A";
-
-      // Re-assign finalAgentName to all policies if any row missed it
-      allPolicies.forEach(p => {
-        if (p.agentName === "N/A") p.agentName = finalAgentName;
-      });
-
-      const persistencyRaw = totalANP === 0 ? 0 : (persistedANP / totalANP) * 100;
-      const roundedPersistency = manulifeRound(persistencyRaw);
-      const targetANP = totalANP * 0.85;
-      const shortfall = Math.max(targetANP - persistedANP, 0);
-
-      let recommendedSaveable = [];
-      if (shortfall > 0 && saveable.length > 0) {
-        saveable.sort((a, b) => {
-          const prio = { "IP": 1, "LA": 2, "LC": 2 };
-          const pa = prio[a.status] || 99;
-          const pb = prio[b.status] || 99;
-          if (pa !== pb) return pa - pb;
-          if (b.monthsPaid !== a.monthsPaid) return b.monthsPaid - a.monthsPaid;
-          return b.anp - a.anp;
-        });
-
-        let accumulated = 0;
-        for (let p of saveable) {
-          if (accumulated >= shortfall) break;
-          accumulated += p.anp;
-          recommendedSaveable.push(p);
-        }
-      }
-
-      reportState = {
-        agentName: finalAgentName,
-        totalANP, persistedANP, roundedPersistency, shortfall,
-        allPolicies, recommendedSaveable,
-        reportDate: reportDate || "N/A", block: block || "N/A", threshold
-      };
-
-      // Banner UI
-      const statusBanner = document.getElementById("statusBanner");
-      if (shortfall <= 0) {
-        statusBanner.className = "status-banner pass";
-        statusBanner.innerHTML = `<span>✅ Target Met (85%)</span><span>${roundedPersistency}%</span>`;
-      } else {
-        statusBanner.className = "status-banner fail";
-        statusBanner.innerHTML = `<span>⚠️ Target Shortfall (85%)</span><span>${roundedPersistency}%</span>`;
-      }
-
-      // KPI Dashboard UI
-      document.getElementById("kpiAgentName").textContent = finalAgentName;
-      document.getElementById("kpiTotalANP").textContent = `RM ${totalANP.toLocaleString(undefined, {minimumFractionDigits: 2})}`;
-      document.getElementById("kpiPersistedANP").textContent = `RM ${persistedANP.toLocaleString(undefined, {minimumFractionDigits: 2})}`;
-      document.getElementById("kpiPersistency").textContent = `${roundedPersistency}%`;
-      document.getElementById("kpiShortfall").textContent = shortfall > 0 ? `RM ${shortfall.toLocaleString(undefined, {minimumFractionDigits: 2})}` : "RM 0.00";
-
-      // Saveable Table UI
-      const saveableSection = document.getElementById("saveableSection");
-      const saveableRows = document.getElementById("saveableRows");
-
-      if (recommendedSaveable.length > 0) {
-        let saveableHTML = "";
-        for (let p of recommendedSaveable) {
-          saveableHTML += `
-            <tr>
-              <td><b>${p.policyNo}</b></td>
-              <td>${p.agentName}</td>
-              <td>${p.clientName}</td>
-              <td>RM ${p.anp.toLocaleString(undefined, {minimumFractionDigits: 2})}</td>
-              <td>${p.monthsPaid}</td>
-              <td>${getStatusBadge(p.status)}</td>
-              <td>${p.premiumDueDate}</td>
-            </tr>`;
-        }
-        saveableRows.innerHTML = saveableHTML;
-        saveableSection.classList.remove("hidden");
-      } else {
-        saveableSection.classList.add("hidden");
-      }
-
-      // Full Table UI
-      let fullRowsHTML = "";
-      allPolicies.forEach(p => {
-        fullRowsHTML += `
-          <tr>
-            <td>${p.policyNo}</td>
-            <td>${p.agentName}</td>
-            <td>${p.clientName}</td>
-            <td>RM ${p.anp.toLocaleString(undefined, {minimumFractionDigits: 2})}</td>
-            <td>${p.monthsPaid}</td>
-            <td>${getStatusBadge(p.status)}</td>
-            <td>${p.premiumDueDate}</td>
-          </tr>`;
-      });
-      document.getElementById("policyRows").innerHTML = fullRowsHTML;
-
-      document.getElementById("resultsCard").classList.remove("hidden");
+    if (parts.length >= 9) {
+      [policyNo, agent, clientName, monthsPaidStr, anpStr, status, premiumDueDate, blockStr, reportDateStr] = parts;
+    } else if (parts.length === 8) {
+      [policyNo, clientName, monthsPaidStr, anpStr, status, premiumDueDate, blockStr, reportDateStr] = parts;
+      agent = manualOverrideAgent || extractedAgentName || "N/A";
+    } else {
+      policyNo = parts[0];
+      agent = parts[1] || "N/A";
+      clientName = parts[2] || "N/A";
+      monthsPaidStr = parts[3];
+      anpStr = parts[4];
+      status = parts[5] || "UNKNOWN";
+      premiumDueDate = parts[6] || "N/A";
+      blockStr = parts[7] || "";
+      reportDateStr = parts[8] || "";
     }
+
+    // Capture the first valid agent name found in the CSV data
+    if (!extractedAgentName && agent && agent !== "N/A" && agent !== "AgentName") {
+      extractedAgentName = agent;
+    }
+
+    const monthsPaid = parseInt(monthsPaidStr);
+    const anp = parseFloat(anpStr ? anpStr.replace(/,/g, '') : "0");
+
+    if (!reportDate && reportDateStr) reportDate = reportDateStr;
+    if (!block && blockStr) block = blockStr;
+
+    if (isNaN(anp) || anp <= 0 || isNaN(monthsPaid)) continue;
+
+    allPolicies.push({ 
+      policyNo, 
+      agentName: agent, 
+      clientName, 
+      monthsPaid, 
+      anp, 
+      status: status.toUpperCase(), 
+      premiumDueDate 
+    });
+    
+    totalANP += anp;
+
+    if (monthsPaid >= threshold) {
+      persistedANP += anp;
+    } else {
+      saveable.push(allPolicies[allPolicies.length - 1]);
+    }
+  }
+
+  // Final Agent Name resolution: Manual Input -> First Extracted Name from Table -> Default Fallback
+  const finalAgentName = manualOverrideAgent || extractedAgentName || "N/A";
+
+  // Re-assign finalAgentName across any rows that had "N/A"
+  allPolicies.forEach(p => {
+    if (!p.agentName || p.agentName === "N/A") {
+      p.agentName = finalAgentName;
+    }
+  });
+
+  const persistencyRaw = totalANP === 0 ? 0 : (persistedANP / totalANP) * 100;
+  const roundedPersistency = manulifeRound(persistencyRaw);
+  const targetANP = totalANP * 0.85;
+  const shortfall = Math.max(targetANP - persistedANP, 0);
+
+  // Update State for PDF Generator
+  reportState = {
+    agentName: finalAgentName,
+    totalANP, persistedANP, roundedPersistency, shortfall,
+    allPolicies, recommendedSaveable: saveable,
+    reportDate: reportDate || "N/A", block: block || "N/A", threshold
+  };
+
+  // --- UPDATE METRICS DASHBOARD CARD ---
+  const kpiAgentEl = document.getElementById("kpiAgentName");
+  if (kpiAgentEl) {
+    kpiAgentEl.textContent = finalAgentName; // <-- FIX: Force updates top metric card
+  }
+
+  document.getElementById("kpiTotalANP").textContent = `RM ${totalANP.toLocaleString(undefined, {minimumFractionDigits: 2})}`;
+  document.getElementById("kpiPersistedANP").textContent = `RM ${persistedANP.toLocaleString(undefined, {minimumFractionDigits: 2})}`;
+  document.getElementById("kpiPersistency").textContent = `${roundedPersistency}%`;
+  document.getElementById("kpiShortfall").textContent = shortfall > 0 ? `RM ${shortfall.toLocaleString(undefined, {minimumFractionDigits: 2})}` : "RM 0.00";
+
+  // Render Table Rows...
+  renderTables();
+  document.getElementById("resultsCard").classList.remove("hidden");
+}
+
 
     function downloadPDF() {
       if (!reportState.allPolicies) return;
