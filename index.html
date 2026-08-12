@@ -248,10 +248,22 @@
         <summary>📘 Copy ChatGPT extraction prompt</summary>
         <div class="guide-content">
           <p>Copy this prompt into ChatGPT to clean raw report tables:</p>
-          <pre id="hiddenPrompt">Please extract the following details from the report:
-Format: PolicyNo, AgentName, ClientName, MonthsPaid, PsistANP, Status, PremiumDueDate, PersistencyBlock, ReportDate
-Example: 00962460, LOW HUI TZE, CHAN KIM CHENG, 9, 3960.00, TC, 14-JUL-2025, 01-AUG-2024 to 31-JUL-2025, 04/08/2026
-Note: Skip total summary rows. Remove commas from numbers.</pre>
+          <pre id="hiddenPrompt">Please extract all policy details from the attached/copied Manulife report into raw CSV format.
+
+Output Format (CSV):
+PolicyNo, AgentName, ClientName, MonthsPaid, PsistANP, Status, PremiumDueDate, PersistencyBlock, ReportDate
+
+Example Output Line:
+00999998, LOW HUI TZE, MOU TAK DENG, 10, 3600.00, LC, 14-JUL-2025, 01-JUN-2023 to 31-MAY-2024, 11/07/2025
+
+Extraction Rules:
+1. ONLY return the plain CSV lines. Do NOT include markdown code blocks (```), introductory text, explanations, or column header lines in the final output.
+2. Only include actual individual policy rows (skip page headers, sub-totals, section titles, or summary rows like "Policy Cnt / Total ANP").
+3. Extract every policy row regardless of sub-headings (e.g. "OL", "RPIL", or other issue-type groupings).
+4. PersistencyBlock = The date range near the top of the report (e.g., "01-JUN-2023 to 31-MAY-2024"). Repeat this exact value on every row.
+5. ReportDate = The report date in the top corner (e.g., "11/07/2025"). Repeat this exact value on every row.
+6. Number Formatting: Remove ALL commas/thousand separators from numeric amounts (e.g., use 3600.00, NOT 3,600.00). Keep exact decimal values.
+</pre>
           <button type="button" class="btn-secondary" style="font-size: 12px; padding: 6px 14px;" onclick="copyPrompt()">📋 Copy Prompt</button>
         </div>
       </details>
