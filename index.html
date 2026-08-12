@@ -589,96 +589,104 @@ function calculate() {
 }
 
 
-    function downloadPDF() {
-      if (!reportState.allPolicies) return;
+function downloadPDF() {
+  if (!reportState.allPolicies) return;
 
-      const { jsPDF } = window.jspdf;
-      const doc = new jsPDF("p", "mm", "a4");
+  const { jsPDF } = window.jspdf;
+  const doc = new jsPDF("p", "mm", "a4");
 
-      const safeAgent = sanitizeText(reportState.agentName);
-      const safeReportDate = sanitizeText(reportState.reportDate);
-      const safeBlock = sanitizeText(reportState.block);
+  const safeAgent = sanitizeText(reportState.agentName) || "N/A";
+  const safeReportDate = sanitizeText(reportState.reportDate) || "N/A";
+  const safeBlock = sanitizeText(reportState.block) || "N/A";
 
-      doc.setFontSize(18);
-      doc.setFont("helvetica", "bold");
-      doc.text("Persistency Performance Report", 14, 20);
+  // Title Section
+  doc.setFontSize(18);
+  doc.setFont("helvetica", "bold");
+  doc.text("Persistency Performance Report", 14, 20);
 
-      doc.setFontSize(10);
-      doc.setFont("helvetica", "normal");
-      doc.setTextColor(100);
-      doc.text(`Agent: ${safeAgent} | Report Date: ${safeReportDate} | Block: ${safeBlock}`, 14, 26);
+  // Sub-Header Metadata Line (Evaluated dynamically)
+  doc.setFontSize(10);
+  doc.setFont("helvetica", "normal");
+  doc.setTextColor(100);
+  doc.text(`Agent: ${safeAgent} | Report Date: ${safeReportDate} | Block: ${safeBlock}`, 14, 26);
 
-      doc.autoTable({
-        startY: 32,
-        head: [["Metric", "Value"]],
-        body: [
-          ["Agent Name", safeAgent],
-          ["Total ANP", `RM ${reportState.totalANP.toLocaleString(undefined, {minimumFractionDigits: 2})}`],
-          ["Persisted ANP", `RM ${reportState.persistedANP.toLocaleString(undefined, {minimumFractionDigits: 2})}`],
-          [`Persistency % (${reportState.threshold}-Month)`, `${reportState.roundedPersistency}%`],
-          ["Status Target (85%)", reportState.shortfall > 0 ? "NOT MET" : "MET"],
-          ["ANP Shortfall", `RM ${reportState.shortfall.toLocaleString(undefined, {minimumFractionDigits: 2})}`]
-        ],
-        theme: "striped",
-        headStyles: { fillColor: [0, 113, 227] }
-      });
+  // Summary Table
+  doc.autoTable({
+    startY: 32,
+    head: [["Metric", "Value"]],
+    body: [
+      ["Agent Name", safeAgent],
+      ["Report Date", safeReportDate],
+      ["Persistency Block", safeBlock],
+      ["Total ANP", `RM ${reportState.totalANP.toLocaleString(undefined, {minimumFractionDigits: 2})}`],
+      ["Persisted ANP", `RM ${reportState.persistedANP.toLocaleString(undefined, {minimumFractionDigits: 2})}`],
+      [`Persistency % (${reportState.threshold}-Month)`, `${reportState.roundedPersistency}%`],
+      ["Status Target (85%)", reportState.shortfall > 0 ? "NOT MET" : "MET"],
+      ["ANP Shortfall", `RM ${reportState.shortfall.toLocaleString(undefined, {minimumFractionDigits: 2})}`]
+    ],
+    theme: "striped",
+    headStyles: { fillColor: [0, 113, 227] }
+  });
 
-      let currentY = doc.lastAutoTable.finalY + 10;
+  let currentY = doc.lastAutoTable.finalY + 10;
 
-      if (reportState.recommendedSaveable && reportState.recommendedSaveable.length > 0) {
-        doc.setFontSize(12);
-        doc.setFont("helvetica", "bold");
-        doc.setTextColor(217, 119, 6);
-        doc.text("Recommended Saveable Policies (To Hit 85% Target)", 14, currentY);
+  // Saveable Policies Table
+  if (reportState.recommendedSaveable && reportState.recommendedSaveable.length > 0) {
+    doc.setFontSize(12);
+    doc.setFont("helvetica", "bold");
+    doc.setTextColor(217, 119, 6);
+    doc.text("Recommended Saveable Policies (To Hit 85% Target)", 14, currentY);
 
-        const saveableRows = reportState.recommendedSaveable.map(p => [
-          sanitizeText(p.policyNo),
-          sanitizeText(p.agentName),
-          sanitizeText(p.clientName),
-          `RM ${p.anp.toLocaleString(undefined, {minimumFractionDigits: 2})}`,
-          p.monthsPaid,
-          sanitizeText(statusLabels[p.status] || p.status),
-          sanitizeText(p.premiumDueDate)
-        ]);
+    const saveableRows = reportState.recommendedSaveable.map(p => [
+      sanitizeText(p.policyNo),
+      sanitizeText(p.agentName),
+      sanitizeText(p.clientName),
+      `RM ${p.anp.toLocaleString(undefined, {minimumFractionDigits: 2})}`,
+      p.monthsPaid,
+      sanitizeText(statusLabels[p.status] || p.status),
+      sanitizeText(p.premiumDueDate)
+    ]);
 
-        doc.autoTable({
-          startY: currentY + 4,
-          head: [["Policy No", "Agent", "Client Name", "ANP", "Mths Paid", "Status", "Premium Due Date"]],
-          body: saveableRows,
-          theme: "grid",
-          styles: { fontSize: 8, font: "helvetica" },
-          headStyles: { fillColor: [217, 119, 6], textColor: [255, 255, 255] }
-        });
+    doc.autoTable({
+      startY: currentY + 4,
+      head: [["Policy No", "Agent", "Client Name", "ANP", "Mths Paid", "Status", "Premium Due Date"]],
+      body: saveableRows,
+      theme: "grid",
+      styles: { fontSize: 8, font: "helvetica" },
+      headStyles: { fillColor: [217, 119, 6], textColor: [255, 255, 255] }
+    });
 
-        currentY = doc.lastAutoTable.finalY + 10;
-      }
+    currentY = doc.lastAutoTable.finalY + 10;
+  }
 
-      doc.setFontSize(12);
-      doc.setFont("helvetica", "bold");
-      doc.setTextColor(0, 0, 0);
-      doc.text("Full Policy Listing", 14, currentY);
+  // Full Policy Listing Table
+  doc.setFontSize(12);
+  doc.setFont("helvetica", "bold");
+  doc.setTextColor(0, 0, 0);
+  doc.text("Full Policy Listing", 14, currentY);
 
-      const fullRows = reportState.allPolicies.map(p => [
-        sanitizeText(p.policyNo),
-        sanitizeText(p.agentName),
-        sanitizeText(p.clientName),
-        `RM ${p.anp.toLocaleString(undefined, {minimumFractionDigits: 2})}`,
-        p.monthsPaid,
-        sanitizeText(statusLabels[p.status] || p.status),
-        sanitizeText(p.premiumDueDate)
-      ]);
+  const fullRows = reportState.allPolicies.map(p => [
+    sanitizeText(p.policyNo),
+    sanitizeText(p.agentName),
+    sanitizeText(p.clientName),
+    `RM ${p.anp.toLocaleString(undefined, {minimumFractionDigits: 2})}`,
+    p.monthsPaid,
+    sanitizeText(statusLabels[p.status] || p.status),
+    sanitizeText(p.premiumDueDate)
+  ]);
 
-      doc.autoTable({
-        startY: currentY + 4,
-        head: [["Policy No", "Agent", "Client Name", "ANP", "Mths Paid", "Status", "Premium Due Date"]],
-        body: fullRows,
-        theme: "grid",
-        styles: { fontSize: 8, font: "helvetica" },
-        headStyles: { fillColor: [230, 230, 230], textColor: [0, 0, 0] }
-      });
+  doc.autoTable({
+    startY: currentY + 4,
+    head: [["Policy No", "Agent", "Client Name", "ANP", "Mths Paid", "Status", "Premium Due Date"]],
+    body: fullRows,
+    theme: "grid",
+    styles: { fontSize: 8, font: "helvetica" },
+    headStyles: { fillColor: [230, 230, 230], textColor: [0, 0, 0] }
+  });
 
-      doc.save(`Persistency_Report_${safeAgent.replace(/\s+/g, '_')}_${new Date().toISOString().slice(0,10)}.pdf`);
-    }
+  doc.save(`Persistency_Report_${safeAgent.replace(/\s+/g, '_')}_${new Date().toISOString().slice(0,10)}.pdf`);
+}
+
 
     window.addEventListener('DOMContentLoaded', () => {
       const dataInputEl = document.getElementById('dataInput');
