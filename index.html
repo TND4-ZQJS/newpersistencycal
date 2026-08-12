@@ -5,9 +5,7 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>CI Pro — Persistency Calculator</title>
 
-  <!-- PDF.js, Tesseract.js, and jsPDF Libraries -->
-  <script src="https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.min.js"></script>
-  <script src="https://cdn.jsdelivr.net/npm/tesseract.js@5/dist/tesseract.min.js"></script>
+  <!-- jsPDF & AutoTable Libraries -->
   <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
   <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf-autotable/3.5.28/jspdf.plugin.autotable.min.js"></script>
 
@@ -42,7 +40,7 @@
 
     .app-header {
       text-align: center;
-      max-width: 800px;
+      max-width: 850px;
       margin: 0 auto 24px;
     }
 
@@ -60,7 +58,7 @@
     }
 
     .container {
-      max-width: 800px;
+      max-width: 850px;
       margin: 0 auto;
       display: flex;
       flex-direction: column;
@@ -112,35 +110,6 @@
       color: var(--text-secondary);
       display: block;
       margin-bottom: 8px;
-    }
-
-    /* Drag & Drop OCR Upload Area */
-    .drop-zone {
-      border: 2px dashed #C7C7CC;
-      border-radius: var(--radius-md);
-      padding: 20px 16px;
-      text-align: center;
-      background: #FAF9F9;
-      cursor: pointer;
-      transition: all 0.2s ease;
-      margin-bottom: 16px;
-    }
-
-    .drop-zone:hover, .drop-zone.dragover {
-      border-color: var(--accent-color);
-      background: #F0F7FF;
-    }
-
-    .drop-zone-icon { font-size: 28px; margin-bottom: 4px; }
-    .drop-zone-text { font-size: 14px; color: var(--text-primary); font-weight: 500; }
-    .drop-zone-subtext { font-size: 12px; color: var(--text-secondary); margin-top: 2px; }
-
-    .ocr-status {
-      font-size: 13px;
-      color: var(--accent-color);
-      font-weight: 600;
-      margin-top: 10px;
-      display: none;
     }
 
     textarea {
@@ -238,6 +207,7 @@
       border-radius: var(--radius-md);
       border: 1px solid var(--border-color);
       overflow: hidden;
+      margin-bottom: 16px;
     }
 
     summary {
@@ -273,31 +243,21 @@
         <label for="p12">12-Month Persistency</label>
       </div>
 
-      <!-- Scanned PDF Upload Box -->
-      <label class="section-label">Import Scanned / Image PDF Report</label>
-      <div class="drop-zone" id="dropZone" onclick="document.getElementById('pdfFileInput').click()">
-        <div class="drop-zone-icon">📄</div>
-        <div class="drop-zone-text">Click or Drag Image-Based PDF Here</div>
-        <div class="drop-zone-subtext">Automatic browser OCR will extract table text</div>
-        <div class="ocr-status" id="ocrStatus"></div>
-      </div>
-      <input type="file" id="pdfFileInput" accept="application/pdf" class="hidden" onchange="handlePDFUpload(event)" />
-
-      <!-- Manual Prompt Helper -->
-      <details style="margin-bottom: 16px;">
+      <!-- Prompt Helper -->
+      <details>
         <summary>📘 Copy ChatGPT extraction prompt</summary>
         <div class="guide-content">
           <p>Copy this prompt into ChatGPT to clean raw report tables:</p>
           <pre id="hiddenPrompt">Please extract the following details from the report:
-Format: PolicyNo, Name, MonthsPaid, PsistANP, Status, PremiumDueDate, PersistencyBlock, ReportDate
-Example: 00962460, CHAN KIM CHENG, 9, 3960.00, TC, 14-JUL-2025, 01-AUG-2024 to 31-JUL-2025, 04/08/2026
+Format: PolicyNo, AgentName, ClientName, MonthsPaid, PsistANP, Status, PremiumDueDate, PersistencyBlock, ReportDate
+Example: 00962460, LOW HUI YEN, CHAN KIM CHENG, 9, 3960.00, TC, 14-JUL-2025, 01-AUG-2024 to 31-JUL-2025, 04/08/2026
 Note: Skip total summary rows. Remove commas from numbers.</pre>
           <button type="button" class="btn-secondary" style="font-size: 12px; padding: 6px 14px;" onclick="copyPrompt()">📋 Copy Prompt</button>
         </div>
       </details>
 
       <label class="section-label" for="dataInput">Parsed Data Input / CSV</label>
-      <textarea id="dataInput" rows="6" placeholder="PolicyNo, Name, MonthsPaid, PsistANP, Status, PremiumDueDate, PersistencyBlock, ReportDate"></textarea>
+      <textarea id="dataInput" rows="7" placeholder="PolicyNo, AgentName, ClientName, MonthsPaid, PsistANP, Status, PremiumDueDate, PersistencyBlock, ReportDate"></textarea>
 
       <div class="button-group">
         <button type="button" class="btn-primary" onclick="calculate()">Calculate Dashboard</button>
@@ -311,6 +271,10 @@ Note: Skip total summary rows. Remove commas from numbers.</pre>
       <div id="statusBanner" class="status-banner"></div>
 
       <div class="kpi-grid">
+        <div class="kpi-card">
+          <div class="kpi-label">Agent Name</div>
+          <div class="kpi-value" id="kpiAgentName" style="font-size: 15px; word-break: break-word;">-</div>
+        </div>
         <div class="kpi-card">
           <div class="kpi-label">Total ANP</div>
           <div class="kpi-value" id="kpiTotalANP">RM 0.00</div>
@@ -337,7 +301,8 @@ Note: Skip total summary rows. Remove commas from numbers.</pre>
             <thead>
               <tr>
                 <th>Policy No</th>
-                <th>Name</th>
+                <th>Agent</th>
+                <th>Client Name</th>
                 <th>ANP (RM)</th>
                 <th>Months</th>
                 <th>Status</th>
@@ -357,7 +322,8 @@ Note: Skip total summary rows. Remove commas from numbers.</pre>
             <thead>
               <tr>
                 <th>Policy No</th>
-                <th>Name</th>
+                <th>Agent</th>
+                <th>Client Name</th>
                 <th>ANP (RM)</th>
                 <th>Months</th>
                 <th>Status</th>
@@ -375,8 +341,6 @@ Note: Skip total summary rows. Remove commas from numbers.</pre>
   </main>
 
   <script>
-    pdfjsLib.GlobalWorkerOptions.workerSrc = 'https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.worker.min.js';
-
     const statusLabels = {
       "IP": "IP (Inforce)",
       "LC": "LC (Lapsed)",
@@ -385,71 +349,6 @@ Note: Skip total summary rows. Remove commas from numbers.</pre>
     };
 
     let reportState = {};
-
-    /* --- Drag & Drop --- */
-    const dropZone = document.getElementById("dropZone");
-    ['dragenter', 'dragover'].forEach(eventName => {
-      dropZone.addEventListener(eventName, (e) => { e.preventDefault(); dropZone.classList.add('dragover'); });
-    });
-    ['dragleave', 'drop'].forEach(eventName => {
-      dropZone.addEventListener(eventName, (e) => { e.preventDefault(); dropZone.classList.remove('dragover'); });
-    });
-    dropZone.addEventListener('drop', (e) => {
-      const dt = e.dataTransfer;
-      const files = dt.files;
-      if (files.length > 0 && files[0].type === "application/pdf") {
-        processPDFFile(files[0]);
-      } else {
-        alert("Please drop a valid PDF file.");
-      }
-    });
-
-    function handlePDFUpload(event) {
-      const file = event.target.files[0];
-      if (file) processPDFFile(file);
-    }
-
-    async function processPDFFile(file) {
-      const statusEl = document.getElementById("ocrStatus");
-      statusEl.style.display = "block";
-      statusEl.innerText = "⏳ Reading PDF file...";
-
-      try {
-        const arrayBuffer = await file.arrayBuffer();
-        const pdf = await pdfjsLib.getDocument({ data: arrayBuffer }).promise;
-        let extractedText = "";
-
-        const worker = await Tesseract.createWorker('eng');
-
-        for (let pageNum = 1; pageNum <= pdf.numPages; pageNum++) {
-          statusEl.innerText = `🔍 Running OCR on page ${pageNum} of ${pdf.numPages}...`;
-
-          const page = await pdf.getPage(pageNum);
-          const viewport = page.getViewport({ scale: 2.0 });
-          
-          const canvas = document.createElement('canvas');
-          const context = canvas.getContext('2d');
-          canvas.height = viewport.height;
-          canvas.width = viewport.width;
-
-          await page.render({ canvasContext: context, viewport: viewport }).promise;
-
-          const { data: { text } } = await worker.recognize(canvas);
-          extractedText += text + "\n";
-        }
-
-        await worker.terminate();
-
-        document.getElementById("dataInput").value = extractedText;
-        statusEl.innerText = "✅ OCR complete! Calculating results...";
-        setTimeout(() => { statusEl.style.display = "none"; }, 3000);
-        
-        calculate();
-      } catch (err) {
-        console.error(err);
-        statusEl.innerText = "❌ OCR Failed. Try standard text copy/paste.";
-      }
-    }
 
     function copyPrompt() {
       const code = document.getElementById("hiddenPrompt").innerText;
@@ -464,12 +363,12 @@ Note: Skip total summary rows. Remove commas from numbers.</pre>
 
     function loadSampleData() {
       const sample = 
-`00961338, CHUA LIAN KHIM, 24, 19999.98, IP, 04-OCT-2026, 01-AUG-2024 to 31-JUL-2025, 04/08/2026
-00955391, CHAN LEE CHING, 23, 3600.00, IP, 02-JUL-2026, 01-AUG-2024 to 31-JUL-2025, 04/08/2026
-00958795, NG XIN YIE, 17, 1749.96, LC, 01-FEB-2026, 01-AUG-2024 to 31-JUL-2025, 04/08/2026
-00958796, NG XIN YEN, 20, 1599.96, TC, 01-MAY-2026, 01-AUG-2024 to 31-JUL-2025, 04/08/2026
-00962460, CHAN KIM CHENG, 9, 3960.00, TC, 14-JUL-2025, 01-AUG-2024 to 31-JUL-2025, 04/08/2026
-00964298, MATHAVAN A/L JALAGOBAL, 3, 4800.00, LC, 11-FEB-2025, 01-AUG-2024 to 31-JUL-2025, 04/08/2026`;
+`00961338, LOW HUI YEN, CHUA LIAN KHIM, 24, 19999.98, IP, 04-OCT-2026, 01-AUG-2024 to 31-JUL-2025, 04/08/2026
+00955391, LOW HUI YEN, CHAN LEE CHING, 23, 3600.00, IP, 02-JUL-2026, 01-AUG-2024 to 31-JUL-2025, 04/08/2026
+00958795, LOW HUI YEN, NG XIN YIE, 17, 1749.96, LC, 01-FEB-2026, 01-AUG-2024 to 31-JUL-2025, 04/08/2026
+00958796, LOW HUI YEN, NG XIN YEN, 20, 1599.96, TC, 01-MAY-2026, 01-AUG-2024 to 31-JUL-2025, 04/08/2026
+00962460, LOW HUI YEN, CHAN KIM CHENG, 9, 3960.00, TC, 14-JUL-2025, 01-AUG-2024 to 31-JUL-2025, 04/08/2026
+00964298, LOW HUI YEN, MATHAVAN A/L JALAGOBAL, 3, 4800.00, LC, 11-FEB-2025, 01-AUG-2024 to 31-JUL-2025, 04/08/2026`;
       document.getElementById("dataInput").value = sample;
       calculate();
     }
@@ -491,7 +390,7 @@ Note: Skip total summary rows. Remove commas from numbers.</pre>
     function calculate() {
       const raw = document.getElementById("dataInput").value.trim();
       if (!raw) {
-        alert("Please paste data or upload a PDF report first.");
+        alert("Please paste data first.");
         return;
       }
 
@@ -504,30 +403,32 @@ Note: Skip total summary rows. Remove commas from numbers.</pre>
       let allPolicies = [];
       let reportDate = "";
       let block = "";
+      let agentName = "";
 
       for (let line of lines) {
         const parts = line.split(/,|\t/).map(s => s.trim()).filter(Boolean);
-        if (parts.length < 4) continue;
+        if (parts.length < 5) continue;
 
-        // Smart flexible array mapping
         const policyNo = parts[0];
-        const name = parts[1] || "N/A";
-        const monthsPaidStr = parts[2];
-        const anpStr = parts[3];
-        const status = parts[4] ? parts[4].toUpperCase() : "UNKNOWN";
-        const premiumDueDate = parts[5] || "N/A";
-        const blockStr = parts[6] || "";
-        const reportDateStr = parts[7] || "";
+        const agent = parts[1] || "N/A";
+        const clientName = parts[2] || "N/A";
+        const monthsPaidStr = parts[3];
+        const anpStr = parts[4];
+        const status = parts[5] ? parts[5].toUpperCase() : "UNKNOWN";
+        const premiumDueDate = parts[6] || "N/A";
+        const blockStr = parts[7] || "";
+        const reportDateStr = parts[8] || "";
 
         const monthsPaid = parseInt(monthsPaidStr);
         const anp = parseFloat(anpStr ? anpStr.replace(/,/g, '') : "0");
 
+        if (!agentName && agent !== "N/A") agentName = agent;
         if (!reportDate && reportDateStr) reportDate = reportDateStr;
         if (!block && blockStr) block = blockStr;
 
         if (isNaN(anp) || anp <= 0 || isNaN(monthsPaid)) continue;
 
-        const policyObj = { policyNo, name, monthsPaid, anp, status, premiumDueDate };
+        const policyObj = { policyNo, agentName: agent, clientName, monthsPaid, anp, status, premiumDueDate };
         allPolicies.push(policyObj);
         totalANP += anp;
 
@@ -539,7 +440,7 @@ Note: Skip total summary rows. Remove commas from numbers.</pre>
       }
 
       if (allPolicies.length === 0) {
-        alert("No valid policy data could be parsed. Check data format.");
+        alert("No valid policy data could be parsed. Check format.");
         return;
       }
 
@@ -548,9 +449,31 @@ Note: Skip total summary rows. Remove commas from numbers.</pre>
       const targetANP = totalANP * 0.85;
       const shortfall = Math.max(targetANP - persistedANP, 0);
 
+      // Rank saveable policies by priority
+      let recommendedSaveable = [];
+      if (shortfall > 0 && saveable.length > 0) {
+        saveable.sort((a, b) => {
+          const prio = { "IP": 1, "LA": 2, "LC": 2 };
+          const pa = prio[a.status] || 99;
+          const pb = prio[b.status] || 99;
+          if (pa !== pb) return pa - pb;
+          if (b.monthsPaid !== a.monthsPaid) return b.monthsPaid - a.monthsPaid;
+          return b.anp - a.anp;
+        });
+
+        let accumulated = 0;
+        for (let p of saveable) {
+          if (accumulated >= shortfall) break;
+          accumulated += p.anp;
+          recommendedSaveable.push(p);
+        }
+      }
+
       reportState = {
+        agentName: agentName || "N/A",
         totalANP, persistedANP, roundedPersistency, shortfall,
-        allPolicies, reportDate: reportDate || "N/A", block: block || "N/A", threshold
+        allPolicies, recommendedSaveable,
+        reportDate: reportDate || "N/A", block: block || "N/A", threshold
       };
 
       // Banner UI
@@ -564,6 +487,7 @@ Note: Skip total summary rows. Remove commas from numbers.</pre>
       }
 
       // KPI UI
+      document.getElementById("kpiAgentName").textContent = reportState.agentName;
       document.getElementById("kpiTotalANP").textContent = `RM ${totalANP.toLocaleString(undefined, {minimumFractionDigits: 2})}`;
       document.getElementById("kpiPersistedANP").textContent = `RM ${persistedANP.toLocaleString(undefined, {minimumFractionDigits: 2})}`;
       document.getElementById("kpiPersistency").textContent = `${roundedPersistency}%`;
@@ -573,25 +497,14 @@ Note: Skip total summary rows. Remove commas from numbers.</pre>
       const saveableSection = document.getElementById("saveableSection");
       const saveableRows = document.getElementById("saveableRows");
 
-      if (shortfall > 0 && saveable.length > 0) {
-        saveable.sort((a, b) => {
-          const prio = { "IP": 1, "LA": 2, "LC": 2 };
-          const pa = prio[a.status] || 99;
-          const pb = prio[b.status] || 99;
-          if (pa !== pb) return pa - pb;
-          if (b.monthsPaid !== a.monthsPaid) return b.monthsPaid - a.monthsPaid;
-          return b.anp - a.anp;
-        });
-
-        let accumulated = 0;
+      if (recommendedSaveable.length > 0) {
         let saveableHTML = "";
-        for (let p of saveable) {
-          if (accumulated >= shortfall) break;
-          accumulated += p.anp;
+        for (let p of recommendedSaveable) {
           saveableHTML += `
             <tr>
               <td><b>${p.policyNo}</b></td>
-              <td>${p.name}</td>
+              <td>${p.agentName}</td>
+              <td>${p.clientName}</td>
               <td>RM ${p.anp.toLocaleString(undefined, {minimumFractionDigits: 2})}</td>
               <td>${p.monthsPaid}</td>
               <td>${getStatusBadge(p.status)}</td>
@@ -610,7 +523,8 @@ Note: Skip total summary rows. Remove commas from numbers.</pre>
         fullRowsHTML += `
           <tr>
             <td>${p.policyNo}</td>
-            <td>${p.name}</td>
+            <td>${p.agentName}</td>
+            <td>${p.clientName}</td>
             <td>RM ${p.anp.toLocaleString(undefined, {minimumFractionDigits: 2})}</td>
             <td>${p.monthsPaid}</td>
             <td>${getStatusBadge(p.status)}</td>
@@ -635,12 +549,14 @@ Note: Skip total summary rows. Remove commas from numbers.</pre>
       doc.setFontSize(10);
       doc.setFont("helvetica", "normal");
       doc.setTextColor(100);
-      doc.text(`Report Date: ${reportState.reportDate} | Block: ${reportState.block}`, 14, 26);
+      doc.text(`Agent: ${reportState.agentName} | Report Date: ${reportState.reportDate} | Block: ${reportState.block}`, 14, 26);
 
+      // KPI Summary Table
       doc.autoTable({
         startY: 32,
         head: [["Metric", "Value"]],
         body: [
+          ["Agent Name", reportState.agentName],
           ["Total ANP", `RM ${reportState.totalANP.toLocaleString(undefined, {minimumFractionDigits: 2})}`],
           ["Persisted ANP", `RM ${reportState.persistedANP.toLocaleString(undefined, {minimumFractionDigits: 2})}`],
           [`Persistency % (${reportState.threshold}-Month)`, `${reportState.roundedPersistency}%`],
@@ -651,9 +567,47 @@ Note: Skip total summary rows. Remove commas from numbers.</pre>
         headStyles: { fillColor: [0, 113, 227] }
       });
 
-      const rows = reportState.allPolicies.map(p => [
+      let currentY = doc.lastAutoTable.finalY + 10;
+
+      // Saveable Policies Table (If shortfall exists)
+      if (reportState.recommendedSaveable && reportState.recommendedSaveable.length > 0) {
+        doc.setFontSize(12);
+        doc.setFont("helvetica", "bold");
+        doc.setTextColor(217, 119, 6); // Warning Orange
+        doc.text("Recommended Saveable Policies (To Hit 85% Target)", 14, currentY);
+
+        const saveableRows = reportState.recommendedSaveable.map(p => [
+          p.policyNo,
+          p.agentName,
+          p.clientName,
+          `RM ${p.anp.toLocaleString(undefined, {minimumFractionDigits: 2})}`,
+          p.monthsPaid,
+          statusLabels[p.status] || p.status,
+          p.premiumDueDate
+        ]);
+
+        doc.autoTable({
+          startY: currentY + 4,
+          head: [["Policy No", "Agent", "Client Name", "ANP", "Mths Paid", "Status", "Premium Due Date"]],
+          body: saveableRows,
+          theme: "grid",
+          styles: { fontSize: 8 },
+          headStyles: { fillColor: [217, 119, 6], textColor: [255, 255, 255] }
+        });
+
+        currentY = doc.lastAutoTable.finalY + 10;
+      }
+
+      // Full Policy Listing Table
+      doc.setFontSize(12);
+      doc.setFont("helvetica", "bold");
+      doc.setTextColor(0, 0, 0);
+      doc.text("Full Policy Listing", 14, currentY);
+
+      const fullRows = reportState.allPolicies.map(p => [
         p.policyNo,
-        p.name,
+        p.agentName,
+        p.clientName,
         `RM ${p.anp.toLocaleString(undefined, {minimumFractionDigits: 2})}`,
         p.monthsPaid,
         statusLabels[p.status] || p.status,
@@ -661,15 +615,15 @@ Note: Skip total summary rows. Remove commas from numbers.</pre>
       ]);
 
       doc.autoTable({
-        startY: doc.lastAutoTable.finalY + 10,
-        head: [["Policy No", "Client Name", "ANP", "Months Paid", "Status", "Premium Due Date"]],
-        body: rows,
+        startY: currentY + 4,
+        head: [["Policy No", "Agent", "Client Name", "ANP", "Mths Paid", "Status", "Premium Due Date"]],
+        body: fullRows,
         theme: "grid",
         styles: { fontSize: 8 },
         headStyles: { fillColor: [230, 230, 230], textColor: [0, 0, 0] }
       });
 
-      doc.save(`Persistency_Report_${new Date().toISOString().slice(0,10)}.pdf`);
+      doc.save(`Persistency_Report_${reportState.agentName.replace(/\s+/g, '_')}_${new Date().toISOString().slice(0,10)}.pdf`);
     }
 
     window.addEventListener('DOMContentLoaded', () => {
