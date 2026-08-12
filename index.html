@@ -1,0 +1,687 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>CI Pro — Persistency Calculator</title>
+
+  <!-- PDF.js, Tesseract.js, and jsPDF Libraries -->
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.min.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/tesseract.js@5/dist/tesseract.min.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf-autotable/3.5.28/jspdf.plugin.autotable.min.js"></script>
+
+  <style>
+    :root {
+      --bg-color: #F5F5F7;
+      --card-bg: #FFFFFF;
+      --accent-color: #0071E3;
+      --accent-hover: #005BB5;
+      --text-primary: #1D1D1F;
+      --text-secondary: #86868B;
+      --border-color: rgba(0, 0, 0, 0.08);
+      --success-bg: #E8F5E9;
+      --success-text: #2E7D32;
+      --danger-bg: #FFEBEE;
+      --danger-text: #C62828;
+      --radius-lg: 18px;
+      --radius-md: 12px;
+      --radius-sm: 8px;
+    }
+
+    * { box-sizing: border-box; }
+
+    body {
+      font-family: -apple-system, BlinkMacSystemFont, "SF Pro Text", "SF Pro Display", "Helvetica Neue", Arial, sans-serif;
+      background-color: var(--bg-color);
+      color: var(--text-primary);
+      margin: 0;
+      padding: 30px 16px;
+      -webkit-font-smoothing: antialiased;
+    }
+
+    .app-header {
+      text-align: center;
+      max-width: 720px;
+      margin: 0 auto 24px;
+    }
+
+    .app-header h1 {
+      font-size: 28px;
+      font-weight: 700;
+      letter-spacing: -0.5px;
+      margin: 0 0 6px 0;
+    }
+
+    .app-header p {
+      color: var(--text-secondary);
+      font-size: 15px;
+      margin: 0;
+    }
+
+    .container {
+      max-width: 720px;
+      margin: 0 auto;
+      display: flex;
+      flex-direction: column;
+      gap: 20px;
+    }
+
+    .card {
+      background: var(--card-bg);
+      border-radius: var(--radius-lg);
+      padding: 24px;
+      box-shadow: 0 4px 20px rgba(0, 0, 0, 0.04), 0 1px 2px rgba(0, 0, 0, 0.02);
+      border: 1px solid var(--border-color);
+    }
+
+    /* Segmented Control */
+    .segmented-control {
+      display: flex;
+      background: #E5E5EA;
+      padding: 3px;
+      border-radius: 10px;
+      margin-bottom: 20px;
+    }
+
+    .segmented-control input[type="radio"] { display: none; }
+
+    .segmented-control label {
+      flex: 1;
+      text-align: center;
+      padding: 8px 12px;
+      font-size: 14px;
+      font-weight: 600;
+      color: var(--text-secondary);
+      border-radius: 7px;
+      cursor: pointer;
+      transition: all 0.2s ease;
+    }
+
+    .segmented-control input[type="radio"]:checked + label {
+      background: #FFFFFF;
+      color: var(--text-primary);
+      box-shadow: 0 2px 6px rgba(0, 0, 0, 0.12);
+    }
+
+    label.section-label {
+      font-size: 13px;
+      font-weight: 600;
+      text-transform: uppercase;
+      letter-spacing: 0.5px;
+      color: var(--text-secondary);
+      display: block;
+      margin-bottom: 8px;
+    }
+
+    /* Drag & Drop OCR Upload Area */
+    .drop-zone {
+      border: 2px dashed #C7C7CC;
+      border-radius: var(--radius-md);
+      padding: 24px 16px;
+      text-align: center;
+      background: #FAF9F9;
+      cursor: pointer;
+      transition: all 0.2s ease;
+      margin-bottom: 16px;
+    }
+
+    .drop-zone:hover, .drop-zone.dragover {
+      border-color: var(--accent-color);
+      background: #F0F7FF;
+    }
+
+    .drop-zone-icon {
+      font-size: 32px;
+      margin-bottom: 6px;
+    }
+
+    .drop-zone-text {
+      font-size: 14px;
+      color: var(--text-primary);
+      font-weight: 500;
+    }
+
+    .drop-zone-subtext {
+      font-size: 12px;
+      color: var(--text-secondary);
+      margin-top: 4px;
+    }
+
+    .ocr-status {
+      font-size: 13px;
+      color: var(--accent-color);
+      font-weight: 600;
+      margin-top: 10px;
+      display: none;
+    }
+
+    textarea {
+      width: 100%;
+      border: 1px solid var(--border-color);
+      border-radius: var(--radius-md);
+      padding: 14px;
+      font-family: inherit;
+      font-size: 13px;
+      color: var(--text-primary);
+      background: #FAF9F9;
+      resize: vertical;
+      transition: border-color 0.2s ease;
+    }
+
+    textarea:focus {
+      outline: none;
+      border-color: var(--accent-color);
+      background: #FFFFFF;
+    }
+
+    .button-group {
+      display: flex;
+      gap: 10px;
+      margin-top: 14px;
+    }
+
+    button {
+      font-family: inherit;
+      font-size: 15px;
+      font-weight: 600;
+      border-radius: 980px;
+      padding: 12px 22px;
+      border: none;
+      cursor: pointer;
+      transition: all 0.2s ease;
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      gap: 6px;
+    }
+
+    .btn-primary { background: var(--accent-color); color: white; flex: 2; }
+    .btn-primary:hover { background: var(--accent-hover); }
+    .btn-secondary { background: #E8E8ED; color: var(--text-primary); flex: 1; }
+    .btn-secondary:hover { background: #DCDCE0; }
+
+    /* KPI Grid */
+    .kpi-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(130px, 1fr));
+      gap: 12px;
+      margin-top: 16px;
+    }
+
+    .kpi-card {
+      background: #F9F9FB;
+      border-radius: var(--radius-md);
+      padding: 14px;
+      border: 1px solid rgba(0, 0, 0, 0.04);
+    }
+
+    .kpi-label { font-size: 12px; color: var(--text-secondary); font-weight: 500; margin-bottom: 4px; }
+    .kpi-value { font-size: 18px; font-weight: 700; color: var(--text-primary); letter-spacing: -0.3px; }
+
+    /* Status Banner */
+    .status-banner {
+      padding: 14px 18px;
+      border-radius: var(--radius-md);
+      font-size: 14px;
+      font-weight: 600;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      margin-bottom: 16px;
+    }
+
+    .status-banner.pass { background: var(--success-bg); color: var(--success-text); }
+    .status-banner.fail { background: var(--danger-bg); color: var(--danger-text); }
+
+    /* Data Tables */
+    .table-container { overflow-x: auto; margin-top: 16px; }
+
+    table.data-table { width: 100%; border-collapse: collapse; font-size: 13px; text-align: left; }
+    table.data-table th { padding: 10px; color: var(--text-secondary); border-bottom: 1px solid var(--border-color); font-weight: 600; }
+    table.data-table td { padding: 12px 10px; border-bottom: 1px solid rgba(0, 0, 0, 0.04); }
+
+    .badge { display: inline-block; padding: 3px 8px; border-radius: 6px; font-size: 11px; font-weight: 700; }
+    .badge-ip { background: #E3F2FD; color: #1565C0; }
+    .badge-lapsed { background: #FFEBEE; color: #C62828; }
+    .badge-other { background: #F5F5F5; color: #616161; }
+
+    details {
+      background: #F9F9FB;
+      border-radius: var(--radius-md);
+      border: 1px solid var(--border-color);
+      overflow: hidden;
+    }
+
+    summary {
+      padding: 12px 16px;
+      font-size: 14px;
+      font-weight: 600;
+      cursor: pointer;
+      user-select: none;
+      color: var(--accent-color);
+    }
+
+    .guide-content { padding: 0 16px 16px; font-size: 13px; line-height: 1.5; color: var(--text-primary); }
+    pre { background: #FFFFFF; padding: 12px; border-radius: var(--radius-sm); border: 1px solid var(--border-color); font-size: 12px; overflow-x: auto; }
+    .hidden { display: none !important; }
+  </style>
+</head>
+<body>
+
+  <header class="app-header">
+    <h1>Persistency Calculator</h1>
+    <p>CI Pro Advisor Performance & ANP Shortfall Tool</p>
+  </header>
+
+  <main class="container">
+    
+    <div class="card">
+      <label class="section-label">Select Target Window</label>
+      <div class="segmented-control">
+        <input type="radio" id="p13" name="persistencyType" value="13" checked />
+        <label for="p13">13-Month Persistency</label>
+
+        <input type="radio" id="p12" name="persistencyType" value="12" />
+        <label for="p12">12-Month Persistency</label>
+      </div>
+
+      <!-- Scanned PDF Upload Box -->
+      <label class="section-label">Import Scanned / Image PDF Report</label>
+      <div class="drop-zone" id="dropZone" onclick="document.getElementById('pdfFileInput').click()">
+        <div class="drop-zone-icon">📄</div>
+        <div class="drop-zone-text">Click or Drag Image-Based PDF Here</div>
+        <div class="drop-zone-subtext">Automatic browser OCR will extract table text</div>
+        <div class="ocr-status" id="ocrStatus"></div>
+      </div>
+      <input type="file" id="pdfFileInput" accept="application/pdf" class="hidden" onchange="handlePDFUpload(event)" />
+
+      <!-- Manual Prompt Helper -->
+      <details style="margin-bottom: 16px;">
+        <summary>📘 Copy ChatGPT extraction prompt</summary>
+        <div class="guide-content">
+          <p>If you prefer using ChatGPT for raw report parsing:</p>
+          <pre id="hiddenPrompt">Please extract the following details from the report:
+Format: PolicyNo, Name, MonthsPaid, PsistANP, Status, PersistencyBlock, ReportDate
+Example: 00999998, MOU TAK DENG, 10, 3600.00, LC, 01-JUN-2023 to 31-MAY-2024, 11/07/2025
+Note: Skip total rows. No thousand separators in numbers.</pre>
+          <button type="button" class="btn-secondary" style="font-size: 12px; padding: 6px 14px;" onclick="copyPrompt()">📋 Copy Prompt</button>
+        </div>
+      </details>
+
+      <label class="section-label" for="dataInput">Parsed Data Input / CSV</label>
+      <textarea id="dataInput" rows="6" placeholder="PolicyNo, Name, MonthsPaid, PsistANP, Status, PersistencyBlock, ReportDate"></textarea>
+
+      <div class="button-group">
+        <button type="button" class="btn-primary" onclick="calculate()">Calculate Dashboard</button>
+        <button type="button" class="btn-secondary" onclick="loadSampleData()">Sample Data</button>
+        <button type="button" class="btn-secondary" onclick="clearData()">Clear</button>
+      </div>
+    </div>
+
+    <!-- Results Dashboard Card -->
+    <div id="resultsCard" class="card hidden">
+      <div id="statusBanner" class="status-banner"></div>
+
+      <div class="kpi-grid">
+        <div class="kpi-card">
+          <div class="kpi-label">Total ANP</div>
+          <div class="kpi-value" id="kpiTotalANP">RM 0.00</div>
+        </div>
+        <div class="kpi-card">
+          <div class="kpi-label">Persisted ANP</div>
+          <div class="kpi-value" id="kpiPersistedANP">RM 0.00</div>
+        </div>
+        <div class="kpi-card">
+          <div class="kpi-label">Persistency %</div>
+          <div class="kpi-value" id="kpiPersistency">0%</div>
+        </div>
+        <div class="kpi-card">
+          <div class="kpi-label">Shortfall</div>
+          <div class="kpi-value" id="kpiShortfall" style="color: var(--danger-text);">RM 0.00</div>
+        </div>
+      </div>
+
+      <!-- Saveable Policies Section -->
+      <div id="saveableSection" style="margin-top: 24px;" class="hidden">
+        <label class="section-label" style="color: #D97706;">💡 Recommended Saveable Policies to Hit 85%</label>
+        <div class="table-container">
+          <table class="data-table">
+            <thead>
+              <tr>
+                <th>Policy No</th>
+                <th>Name</th>
+                <th>ANP (RM)</th>
+                <th>Months</th>
+                <th>Status</th>
+              </tr>
+            </thead>
+            <tbody id="saveableRows"></tbody>
+          </table>
+        </div>
+      </div>
+
+      <!-- Full Breakdown -->
+      <div style="margin-top: 24px;">
+        <label class="section-label">Full Policy Listing</label>
+        <div class="table-container">
+          <table class="data-table">
+            <thead>
+              <tr>
+                <th>Policy No</th>
+                <th>Name</th>
+                <th>ANP (RM)</th>
+                <th>Months</th>
+                <th>Status</th>
+              </tr>
+            </thead>
+            <tbody id="policyRows"></tbody>
+          </table>
+        </div>
+      </div>
+
+      <button type="button" class="btn-primary" style="margin-top: 20px; width: 100%;" onclick="downloadPDF()">📄 Download PDF Report</button>
+    </div>
+
+  </main>
+
+  <script>
+    // Set up PDF.js worker
+    pdfjsLib.GlobalWorkerOptions.workerSrc = 'https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.worker.min.js';
+
+    const statusLabels = {
+      "IP": "IP (Inforce)",
+      "LC": "LC (Lapsed)",
+      "LA": "LA (Lapsed)",
+      "TC": "TC (Surrendered)"
+    };
+
+    let reportState = {};
+
+    /* --- Drag & Drop Setup --- */
+    const dropZone = document.getElementById("dropZone");
+    ['dragenter', 'dragover'].forEach(eventName => {
+      dropZone.addEventListener(eventName, (e) => { e.preventDefault(); dropZone.classList.add('dragover'); });
+    });
+    ['dragleave', 'drop'].forEach(eventName => {
+      dropZone.addEventListener(eventName, (e) => { e.preventDefault(); dropZone.classList.remove('dragover'); });
+    });
+    dropZone.addEventListener('drop', (e) => {
+      const dt = e.dataTransfer;
+      const files = dt.files;
+      if (files.length > 0 && files[0].type === "application/pdf") {
+        processPDFFile(files[0]);
+      } else {
+        alert("Please drop a valid PDF file.");
+      }
+    });
+
+    function handlePDFUpload(event) {
+      const file = event.target.files[0];
+      if (file) processPDFFile(file);
+    }
+
+    /* --- OCR PDF Processor --- */
+    async function processPDFFile(file) {
+      const statusEl = document.getElementById("ocrStatus");
+      statusEl.style.display = "block";
+      statusEl.innerText = "⏳ Reading PDF file...";
+
+      try {
+        const arrayBuffer = await file.arrayBuffer();
+        const pdf = await pdfjsLib.getDocument({ data: arrayBuffer }).promise;
+        let extractedText = "";
+
+        const worker = await Tesseract.createWorker('eng');
+
+        for (let pageNum = 1; pageNum <= pdf.numPages; pageNum++) {
+          statusEl.innerText = `🔍 Running OCR on page ${pageNum} of ${pdf.numPages}...`;
+
+          const page = await pdf.getPage(pageNum);
+          const viewport = page.getViewport({ scale: 2.0 }); // Scale up for accuracy
+          
+          const canvas = document.createElement('canvas');
+          const context = canvas.getContext('2d');
+          canvas.height = viewport.height;
+          canvas.width = viewport.width;
+
+          await page.render({ canvasContext: context, viewport: viewport }).promise;
+
+          const { data: { text } } = await worker.recognize(canvas);
+          extractedText += text + "\n";
+        }
+
+        await worker.terminate();
+
+        document.getElementById("dataInput").value = extractedText;
+        statusEl.innerText = "✅ OCR complete! Calculating results...";
+        setTimeout(() => { statusEl.style.display = "none"; }, 3000);
+        
+        calculate();
+      } catch (err) {
+        console.error(err);
+        statusEl.innerText = "❌ OCR Failed. Try standard text copy/paste.";
+      }
+    }
+
+    function copyPrompt() {
+      const code = document.getElementById("hiddenPrompt").innerText;
+      navigator.clipboard.writeText(code).then(() => alert("Prompt copied!"));
+    }
+
+    function clearData() {
+      document.getElementById("dataInput").value = "";
+      localStorage.removeItem("persistencyDataInput");
+      document.getElementById("resultsCard").classList.add("hidden");
+    }
+
+    function loadSampleData() {
+      const sample = 
+`00102938, TAN AH KOW, 14, 4800.00, IP, 01-JUN-2023 to 31-MAY-2024, 11/08/2026
+00102939, SITI NURHALIZA, 11, 3200.00, IP, 01-JUN-2023 to 31-MAY-2024, 11/08/2026
+00102940, CHONG WEI, 8, 5500.00, LC, 01-JUN-2023 to 31-MAY-2024, 11/08/2026
+00102941, MUTHU SAMY, 13, 2400.00, IP, 01-JUN-2023 to 31-MAY-2024, 11/08/2026`;
+      document.getElementById("dataInput").value = sample;
+      calculate();
+    }
+
+    function manulifeRound(value) {
+      let num = parseFloat(value.toFixed(4));
+      num = parseFloat(num.toFixed(3));
+      num = parseFloat(num.toFixed(2));
+      num = parseFloat(num.toFixed(1));
+      return num.toFixed(1);
+    }
+
+    function getStatusBadge(status) {
+      if (status === "IP") return `<span class="badge badge-ip">IP</span>`;
+      if (status === "LA" || status === "LC") return `<span class="badge badge-lapsed">${status}</span>`;
+      return `<span class="badge badge-other">${status}</span>`;
+    }
+
+    function calculate() {
+      const raw = document.getElementById("dataInput").value.trim();
+      if (!raw) {
+        alert("Please paste data or upload a PDF report first.");
+        return;
+      }
+
+      const threshold = parseInt(document.querySelector('input[name="persistencyType"]:checked').value);
+      const lines = raw.split("\n");
+
+      let totalANP = 0;
+      let persistedANP = 0;
+      let saveable = [];
+      let allPolicies = [];
+      let reportDate = "";
+      let block = "";
+
+      for (let line of lines) {
+        // Multi-delimiter regex match (commas, spaces, tabs)
+        const parts = line.split(/,|\t/).map(s => s.trim()).filter(Boolean);
+        if (parts.length < 4) continue;
+
+        const [policyNo, name, monthsPaidStr, anpStr, status, blockStr, reportDateStr] = parts;
+        const monthsPaid = parseInt(monthsPaidStr);
+        const anp = parseFloat(anpStr ? anpStr.replace(/,/g, '') : "0");
+
+        if (!reportDate && reportDateStr) reportDate = reportDateStr;
+        if (!block && blockStr) block = blockStr;
+
+        if (isNaN(anp) || anp <= 0 || isNaN(monthsPaid)) continue;
+
+        const policyObj = { policyNo, name: name || "N/A", monthsPaid, anp, status: status ? status.toUpperCase() : "UNKNOWN" };
+        allPolicies.push(policyObj);
+        totalANP += anp;
+
+        if (monthsPaid >= threshold) {
+          persistedANP += anp;
+        } else {
+          saveable.push(policyObj);
+        }
+      }
+
+      if (allPolicies.length === 0) {
+        alert("No valid policy data could be parsed. Check data format.");
+        return;
+      }
+
+      const persistencyRaw = totalANP === 0 ? 0 : (persistedANP / totalANP) * 100;
+      const roundedPersistency = manulifeRound(persistencyRaw);
+      const targetANP = totalANP * 0.85;
+      const shortfall = Math.max(targetANP - persistedANP, 0);
+
+      reportState = {
+        totalANP, persistedANP, roundedPersistency, shortfall,
+        allPolicies, reportDate: reportDate || "N/A", block: block || "N/A", threshold
+      };
+
+      // Banner UI
+      const statusBanner = document.getElementById("statusBanner");
+      if (shortfall <= 0) {
+        statusBanner.className = "status-banner pass";
+        statusBanner.innerHTML = `<span>✅ Target Met (85%)</span><span>${roundedPersistency}%</span>`;
+      } else {
+        statusBanner.className = "status-banner fail";
+        statusBanner.innerHTML = `<span>⚠️ Target Shortfall (85%)</span><span>${roundedPersistency}%</span>`;
+      }
+
+      // KPI UI
+      document.getElementById("kpiTotalANP").textContent = `RM ${totalANP.toLocaleString(undefined, {minimumFractionDigits: 2})}`;
+      document.getElementById("kpiPersistedANP").textContent = `RM ${persistedANP.toLocaleString(undefined, {minimumFractionDigits: 2})}`;
+      document.getElementById("kpiPersistency").textContent = `${roundedPersistency}%`;
+      document.getElementById("kpiShortfall").textContent = shortfall > 0 ? `RM ${shortfall.toLocaleString(undefined, {minimumFractionDigits: 2})}` : "RM 0.00";
+
+      // Saveable UI
+      const saveableSection = document.getElementById("saveableSection");
+      const saveableRows = document.getElementById("saveableRows");
+
+      if (shortfall > 0 && saveable.length > 0) {
+        saveable.sort((a, b) => {
+          const prio = { "IP": 1, "LA": 2, "LC": 2 };
+          const pa = prio[a.status] || 99;
+          const pb = prio[b.status] || 99;
+          if (pa !== pb) return pa - pb;
+          if (b.monthsPaid !== a.monthsPaid) return b.monthsPaid - a.monthsPaid;
+          return b.anp - a.anp;
+        });
+
+        let accumulated = 0;
+        let saveableHTML = "";
+        for (let p of saveable) {
+          if (accumulated >= shortfall) break;
+          accumulated += p.anp;
+          saveableHTML += `
+            <tr>
+              <td><b>${p.policyNo}</b></td>
+              <td>${p.name}</td>
+              <td>RM ${p.anp.toLocaleString(undefined, {minimumFractionDigits: 2})}</td>
+              <td>${p.monthsPaid}</td>
+              <td>${getStatusBadge(p.status)}</td>
+            </tr>`;
+        }
+        saveableRows.innerHTML = saveableHTML;
+        saveableSection.classList.remove("hidden");
+      } else {
+        saveableSection.classList.add("hidden");
+      }
+
+      // Full Table UI
+      let fullRowsHTML = "";
+      allPolicies.forEach(p => {
+        fullRowsHTML += `
+          <tr>
+            <td>${p.policyNo}</td>
+            <td>${p.name}</td>
+            <td>RM ${p.anp.toLocaleString(undefined, {minimumFractionDigits: 2})}</td>
+            <td>${p.monthsPaid}</td>
+            <td>${getStatusBadge(p.status)}</td>
+          </tr>`;
+      });
+      document.getElementById("policyRows").innerHTML = fullRowsHTML;
+
+      document.getElementById("resultsCard").classList.remove("hidden");
+    }
+
+    function downloadPDF() {
+      if (!reportState.allPolicies) return;
+
+      const { jsPDF } = window.jspdf;
+      const doc = new jsPDF("p", "mm", "a4");
+
+      doc.setFontSize(18);
+      doc.setFont("helvetica", "bold");
+      doc.text("Persistency Performance Report", 14, 20);
+
+      doc.setFontSize(10);
+      doc.setFont("helvetica", "normal");
+      doc.setTextColor(100);
+      doc.text(`Report Date: ${reportState.reportDate} | Block: ${reportState.block}`, 14, 26);
+
+      doc.autoTable({
+        startY: 32,
+        head: [["Metric", "Value"]],
+        body: [
+          ["Total ANP", `RM ${reportState.totalANP.toLocaleString(undefined, {minimumFractionDigits: 2})}`],
+          ["Persisted ANP", `RM ${reportState.persistedANP.toLocaleString(undefined, {minimumFractionDigits: 2})}`],
+          [`Persistency % (${reportState.threshold}-Month)`, `${reportState.roundedPersistency}%`],
+          ["Status Target (85%)", reportState.shortfall > 0 ? "NOT MET" : "MET"],
+          ["ANP Shortfall", `RM ${reportState.shortfall.toLocaleString(undefined, {minimumFractionDigits: 2})}`]
+        ],
+        theme: "striped",
+        headStyles: { fillColor: [0, 113, 227] }
+      });
+
+      const rows = reportState.allPolicies.map(p => [
+        p.policyNo,
+        p.name,
+        `RM ${p.anp.toLocaleString(undefined, {minimumFractionDigits: 2})}`,
+        p.monthsPaid,
+        statusLabels[p.status] || p.status
+      ]);
+
+      doc.autoTable({
+        startY: doc.lastAutoTable.finalY + 10,
+        head: [["Policy No", "Client Name", "ANP", "Months Paid", "Status"]],
+        body: rows,
+        theme: "grid",
+        styles: { fontSize: 8 },
+        headStyles: { fillColor: [230, 230, 230], textColor: [0, 0, 0] }
+      });
+
+      doc.save(`Persistency_Report_${new Date().toISOString().slice(0,10)}.pdf`);
+    }
+
+    // Auto-save input state
+    window.addEventListener('DOMContentLoaded', () => {
+      const dataInputEl = document.getElementById('dataInput');
+      const savedInput = localStorage.getItem('persistencyDataInput');
+      if (savedInput && dataInputEl) dataInputEl.value = savedInput;
+
+      dataInputEl.addEventListener('input', function() {
+        localStorage.setItem('persistencyDataInput', this.value);
+      });
+    });
+  </script>
+</body>
+</html>
