@@ -350,16 +350,26 @@ Note: Skip total summary rows. Remove commas from numbers.</pre>
 
     let reportState = {};
 
-    function sanitizeText(str) {
-      if (!str) return "";
-      return String(str)
-        .replace(/[\u1680\u180E\u2000-\u200B\u202F\u205F\u3000\uFEFF\u00A0]/g, ' ')
-        .replace(/[\u2018\u2019]/g, "'")
-        .replace(/[\u201C\u201D]/g, '"')
-        .normalize("NFD").replace(/[\u0300-\u036f]/g, "")
-        .replace(/[^\x20-\x7E]/g, "")
-        .trim();
-    }
+function sanitizeText(str) {
+  if (!str) return "";
+  return String(str)
+    // Convert common Greek OCR homoglyphs back to standard Latin letters
+    .replace(/\u0396/g, 'Z') // Greek Zeta -> Latin Z
+    .replace(/\u0395/g, 'E') // Greek Epsilon -> Latin E
+    .replace(/\u0391/g, 'A') // Greek Alpha -> Latin A
+    .replace(/\u0392/g, 'B') // Greek Beta -> Latin B
+    .replace(/\u039F/g, 'O') // Greek Omicron -> Latin O
+    .replace(/\u03A1/g, 'P') // Greek Rho -> Latin P
+    .replace(/\u03A4/g, 'T') // Greek Tau -> Latin T
+    .replace(/\u03A7/g, 'X') // Greek Chi -> Latin X
+    .replace(/[\u1680\u180E\u2000-\u200B\u202F\u205F\u3000\uFEFF\u00A0]/g, ' ')
+    .replace(/[\u2018\u2019]/g, "'")
+    .replace(/[\u201C\u201D]/g, '"')
+    .normalize("NFD").replace(/[\u0300-\u036f]/g, "")
+    .replace(/[^\x20-\x7E]/g, "")
+    .trim();
+}
+
 
     function copyPrompt() {
       const code = document.getElementById("hiddenPrompt").innerText;
