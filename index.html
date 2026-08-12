@@ -456,7 +456,9 @@ Note: Skip total summary rows. Remove commas from numbers.</pre>
 
 function calculate() {
   const raw = document.getElementById("dataInput").value.trim();
-  const manualOverrideAgent = sanitizeText(document.getElementById("agentNameInput").value);
+  const manualOverrideAgent = sanitizeText(document.getElementById("agentNameInput")?.value);
+  const manualReportDate = sanitizeText(document.getElementById("reportDateInput")?.value);
+  const manualBlock = sanitizeText(document.getElementById("blockInput")?.value);
 
   if (!raw) {
     alert("Please paste data first.");
@@ -470,53 +472,63 @@ function calculate() {
   let persistedANP = 0;
   let unpersistedCandidates = [];
   let allPolicies = [];
-  let reportDate = "";
-  let block = "";
+  let extractedReportDate = "";
+  let extractedBlock = "";
   let extractedAgentName = "";
 
   for (let line of lines) {
-    const parts = line.split(/,|\t/).map(s => sanitizeText(s)).filter(Boolean);
+    if (!line.trim()) continue;
+
+    const parts = line.split(/,|\t/).map(s => sanitizeText(s));
     if (parts.length < 4) continue;
 
-    let policyNo, agent, clientName, monthsPaidStr, anpStr, status, premiumDueDate, blockStr, reportDateStr;
+    let policyNo = "";
+    let agent = "";
+    let clientName = "";
+    let monthsPaidStr = "";
+    let anpStr = "";
+    let status = "";
+    let premiumDueDate = "";
+    let blockStr = "";
+    let reportDateStr = "";
 
+    // Position extraction based on column count
     if (parts.length >= 9) {
       [policyNo, agent, clientName, monthsPaidStr, anpStr, status, premiumDueDate, blockStr, reportDateStr] = parts;
     } else if (parts.length === 8) {
       [policyNo, clientName, monthsPaidStr, anpStr, status, premiumDueDate, blockStr, reportDateStr] = parts;
       agent = manualOverrideAgent || extractedAgentName || "N/A";
     } else {
-      policyNo = parts[0];
-      agent = parts[1] || "N/A";
-      clientName = parts[2] || "N/A";
-      monthsPaidStr = parts[3];
-      anpStr = parts[4];
-      status = parts[5] || "UNKNOWN";
-      premiumDueDate = parts[6] || "N/A";
-      blockStr = parts[7] || "";
-      reportDateStr = parts[8] || "";
-    }
-
-    if (!extractedAgentName && agent && agent !== "N/A" && agent !== "AgentName") {
-      extractedAgentName = agent;
+      [policyNo, agent, clientName, monthsPaidStr, anpStr, status, premiumDueDate] = parts;
     }
 
     const monthsPaid = parseInt(monthsPaidStr);
     const anp = parseFloat(anpStr ? anpStr.replace(/,/g, '') : "0");
 
-    if (!reportDate && reportDateStr) reportDate = reportDateStr;
-    if (!block && blockStr) block = blockStr;
+    // 1. SKIP HEADER ROWS OR INVALID DATA LINES FIRST
+    if (isNaN(anp) || isNaN(monthsPaid) || anp <= 0) continue;
 
-    if (isNaN(anp) || anp <= 0 || isNaN(monthsPaid)) continue;
+    // 2. EXTRACT METADATA ONLY FROM VALID DATA ROWS
+    if (!extractedAgentName && agent && agent !== "N/A" && !/agent/i.test(agent)) {
+      extractedAgentName = agent;
+    }
+
+    if (!extractedReportDate && reportDateStr && !/report\s*date/i.test(reportDateStr)) {
+      extractedReportDate = reportDateStr;
+    }
+
+    if (!extractedBlock && blockStr && !/block/i.test(blockStr)) {
+      extractedBlock = blockStr;
+    }
 
     const policyObj = { 
       policyNo, 
-      agentName: agent, 
-      clientName, 
+      agentName: agent || manualOverrideAgent || "N/A", 
+      clientName: clientName || "N/A", 
       monthsPaid, 
       anp, 
-      status: status.toUpperCase(), 
-      premiumDueDate 
+      status: (status || "UNKNOWN").toUpperCase(), 
+      premiumDueDate: premiumDueDate || "N/A" 
     };
 
     allPolicies.push(policyObj);
@@ -530,6 +542,8 @@ function calculate() {
   }
 
   const finalAgentName = manualOverrideAgent || extractedAgentName || "N/A";
+  const finalReportDate = manualReportDate || extractedReportDate || "N/A";
+  const finalBlock = manualBlock || extractedBlock || "N/A";
 
   allPolicies.forEach(p => {
     if (!p.agentName || p.agentName === "N/A") {
@@ -542,10 +556,9 @@ function calculate() {
   const targetANP = totalANP * 0.85;
   const shortfall = Math.max(targetANP - persistedANP, 0);
 
-  // --- ORIGINAL SAVEABLE LOGIC ---
+  // Recommended Saveable Policies
   let saveable = [];
   if (shortfall > 0 && unpersistedCandidates.length > 0) {
-    // 1. Sort by Priority (IP -> LA/LC -> Others), then Months Paid (Desc), then ANP (Desc)
     unpersistedCandidates.sort((a, b) => {
       const prio = { "IP": 1, "LA": 2, "LC": 2 };
       const pa = prio[a.status] || 99;
@@ -555,7 +568,6 @@ function calculate() {
       return b.anp - a.anp;
     });
 
-    // 2. Accumulate until shortfall target is hit
     let added = 0;
     for (let p of unpersistedCandidates) {
       if (added >= shortfall) break;
@@ -564,15 +576,17 @@ function calculate() {
     }
   }
 
-  // Update Global State
+  // Save to State
   reportState = {
     agentName: finalAgentName,
     totalANP, persistedANP, roundedPersistency, shortfall,
     allPolicies, recommendedSaveable: saveable,
-    reportDate: reportDate || "N/A", block: block || "N/A", threshold
+    reportDate: finalReportDate, 
+    block: finalBlock, 
+    threshold
   };
 
-  // Update UI Elements
+  // UI Updates
   const kpiAgentEl = document.getElementById("kpiAgentName");
   if (kpiAgentEl) {
     kpiAgentEl.textContent = finalAgentName;
