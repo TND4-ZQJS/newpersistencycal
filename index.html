@@ -73,7 +73,6 @@
       border: 1px solid var(--border-color);
     }
 
-    /* Segmented Control */
     .segmented-control {
       display: flex;
       background: #E5E5EA;
@@ -112,20 +111,22 @@
       margin-bottom: 8px;
     }
 
-    textarea {
+    input[type="text"], textarea {
       width: 100%;
       border: 1px solid var(--border-color);
       border-radius: var(--radius-md);
-      padding: 14px;
+      padding: 12px 14px;
       font-family: inherit;
       font-size: 13px;
       color: var(--text-primary);
       background: #FAF9F9;
-      resize: vertical;
       transition: border-color 0.2s ease;
+      margin-bottom: 16px;
     }
 
-    textarea:focus {
+    textarea { resize: vertical; }
+
+    input[type="text"]:focus, textarea:focus {
       outline: none;
       border-color: var(--accent-color);
       background: #FFFFFF;
@@ -157,7 +158,6 @@
     .btn-secondary { background: #E8E8ED; color: var(--text-primary); flex: 1; }
     .btn-secondary:hover { background: #DCDCE0; }
 
-    /* KPI Grid */
     .kpi-grid {
       display: grid;
       grid-template-columns: repeat(auto-fit, minmax(130px, 1fr));
@@ -175,7 +175,6 @@
     .kpi-label { font-size: 12px; color: var(--text-secondary); font-weight: 500; margin-bottom: 4px; }
     .kpi-value { font-size: 18px; font-weight: 700; color: var(--text-primary); letter-spacing: -0.3px; }
 
-    /* Status Banner */
     .status-banner {
       padding: 14px 18px;
       border-radius: var(--radius-md);
@@ -190,7 +189,6 @@
     .status-banner.pass { background: var(--success-bg); color: var(--success-text); }
     .status-banner.fail { background: var(--danger-bg); color: var(--danger-text); }
 
-    /* Data Tables */
     .table-container { overflow-x: auto; margin-top: 16px; }
 
     table.data-table { width: 100%; border-collapse: collapse; font-size: 13px; text-align: left; }
@@ -243,14 +241,16 @@
         <label for="p12">12-Month Persistency</label>
       </div>
 
-      <!-- Prompt Helper -->
+      <label class="section-label" for="agentNameInput">Agent Name (Optional Override)</label>
+      <input type="text" id="agentNameInput" placeholder="e.g. LOW HUI TZE" />
+
       <details>
         <summary>📘 Copy ChatGPT extraction prompt</summary>
         <div class="guide-content">
           <p>Copy this prompt into ChatGPT to clean raw report tables:</p>
           <pre id="hiddenPrompt">Please extract the following details from the report:
 Format: PolicyNo, AgentName, ClientName, MonthsPaid, PsistANP, Status, PremiumDueDate, PersistencyBlock, ReportDate
-Example: 00962460, LOW HUI YEN, CHAN KIM CHENG, 9, 3960.00, TC, 14-JUL-2025, 01-AUG-2024 to 31-JUL-2025, 04/08/2026
+Example: 00962460, LOW HUI TZE, CHAN KIM CHENG, 9, 3960.00, TC, 14-JUL-2025, 01-AUG-2024 to 31-JUL-2025, 04/08/2026
 Note: Skip total summary rows. Remove commas from numbers.</pre>
           <button type="button" class="btn-secondary" style="font-size: 12px; padding: 6px 14px;" onclick="copyPrompt()">📋 Copy Prompt</button>
         </div>
@@ -350,6 +350,18 @@ Note: Skip total summary rows. Remove commas from numbers.</pre>
 
     let reportState = {};
 
+    // Cleans non-breaking spaces, smart quotes, and unprintable unicode characters
+    function sanitizeText(str) {
+      if (!str) return "";
+      return String(str)
+        .replace(/[\u1680\u180E\u2000-\u200B\u202F\u205F\u3000\uFEFF\u00A0]/g, ' ') // Non-breaking spaces to standard space
+        .replace(/[\u2018\u2019]/g, "'") // Smart single quotes
+        .replace(/[\u201C\u201D]/g, '"') // Smart double quotes
+        .normalize("NFD").replace(/[\u0300-\u036f]/g, "") // Remove accents
+        .replace(/[^\x20-\x7E]/g, "") // Keep printable ASCII only
+        .trim();
+    }
+
     function copyPrompt() {
       const code = document.getElementById("hiddenPrompt").innerText;
       navigator.clipboard.writeText(code).then(() => alert("Prompt copied!"));
@@ -357,18 +369,21 @@ Note: Skip total summary rows. Remove commas from numbers.</pre>
 
     function clearData() {
       document.getElementById("dataInput").value = "";
+      document.getElementById("agentNameInput").value = "";
       localStorage.removeItem("persistencyDataInput");
+      localStorage.removeItem("persistencyAgentName");
       document.getElementById("resultsCard").classList.add("hidden");
     }
 
     function loadSampleData() {
+      document.getElementById("agentNameInput").value = "LOW HUI TZE";
       const sample = 
-`00961338, LOW HUI YEN, CHUA LIAN KHIM, 24, 19999.98, IP, 04-OCT-2026, 01-AUG-2024 to 31-JUL-2025, 04/08/2026
-00955391, LOW HUI YEN, CHAN LEE CHING, 23, 3600.00, IP, 02-JUL-2026, 01-AUG-2024 to 31-JUL-2025, 04/08/2026
-00958795, LOW HUI YEN, NG XIN YIE, 17, 1749.96, LC, 01-FEB-2026, 01-AUG-2024 to 31-JUL-2025, 04/08/2026
-00958796, LOW HUI YEN, NG XIN YEN, 20, 1599.96, TC, 01-MAY-2026, 01-AUG-2024 to 31-JUL-2025, 04/08/2026
-00962460, LOW HUI YEN, CHAN KIM CHENG, 9, 3960.00, TC, 14-JUL-2025, 01-AUG-2024 to 31-JUL-2025, 04/08/2026
-00964298, LOW HUI YEN, MATHAVAN A/L JALAGOBAL, 3, 4800.00, LC, 11-FEB-2025, 01-AUG-2024 to 31-JUL-2025, 04/08/2026`;
+`00961338, LOW HUI TZE, CHUA LIAN KHIM, 24, 19999.98, IP, 04-OCT-2026, 01-AUG-2024 to 31-JUL-2025, 04/08/2026
+00955391, LOW HUI TZE, CHAN LEE CHING, 23, 3600.00, IP, 02-JUL-2026, 01-AUG-2024 to 31-JUL-2025, 04/08/2026
+00958795, LOW HUI TZE, NG XIN YIE, 17, 1749.96, LC, 01-FEB-2026, 01-AUG-2024 to 31-JUL-2025, 04/08/2026
+00958796, LOW HUI TZE, NG XIN YEN, 20, 1599.96, TC, 01-MAY-2026, 01-AUG-2024 to 31-JUL-2025, 04/08/2026
+00962460, LOW HUI TZE, CHAN KIM CHENG, 9, 3960.00, TC, 14-JUL-2025, 01-AUG-2024 to 31-JUL-2025, 04/08/2026
+00964298, LOW HUI TZE, MATHAVAN A/L JALAGOBAL, 3, 4800.00, LC, 11-FEB-2025, 01-AUG-2024 to 31-JUL-2025, 04/08/2026`;
       document.getElementById("dataInput").value = sample;
       calculate();
     }
@@ -389,6 +404,8 @@ Note: Skip total summary rows. Remove commas from numbers.</pre>
 
     function calculate() {
       const raw = document.getElementById("dataInput").value.trim();
+      const manualAgentInput = sanitizeText(document.getElementById("agentNameInput").value);
+
       if (!raw) {
         alert("Please paste data first.");
         return;
@@ -403,32 +420,50 @@ Note: Skip total summary rows. Remove commas from numbers.</pre>
       let allPolicies = [];
       let reportDate = "";
       let block = "";
-      let agentName = "";
+      let parsedAgentName = "";
 
       for (let line of lines) {
-        const parts = line.split(/,|\t/).map(s => s.trim()).filter(Boolean);
-        if (parts.length < 5) continue;
+        const parts = line.split(/,|\t/).map(s => sanitizeText(s)).filter(Boolean);
+        if (parts.length < 4) continue;
 
-        const policyNo = parts[0];
-        const agent = parts[1] || "N/A";
-        const clientName = parts[2] || "N/A";
-        const monthsPaidStr = parts[3];
-        const anpStr = parts[4];
-        const status = parts[5] ? parts[5].toUpperCase() : "UNKNOWN";
-        const premiumDueDate = parts[6] || "N/A";
-        const blockStr = parts[7] || "";
-        const reportDateStr = parts[8] || "";
+        let policyNo, agent, clientName, monthsPaidStr, anpStr, status, premiumDueDate, blockStr, reportDateStr;
+
+        // Flexible column mapping fallback
+        if (parts.length >= 9) {
+          [policyNo, agent, clientName, monthsPaidStr, anpStr, status, premiumDueDate, blockStr, reportDateStr] = parts;
+        } else if (parts.length === 8) {
+          [policyNo, clientName, monthsPaidStr, anpStr, status, premiumDueDate, blockStr, reportDateStr] = parts;
+          agent = manualAgentInput || "N/A";
+        } else {
+          policyNo = parts[0];
+          agent = manualAgentInput || "N/A";
+          clientName = parts[1] || "N/A";
+          monthsPaidStr = parts[2];
+          anpStr = parts[3];
+          status = parts[4] || "UNKNOWN";
+          premiumDueDate = parts[5] || "N/A";
+          blockStr = parts[6] || "";
+          reportDateStr = parts[7] || "";
+        }
 
         const monthsPaid = parseInt(monthsPaidStr);
         const anp = parseFloat(anpStr ? anpStr.replace(/,/g, '') : "0");
 
-        if (!agentName && agent !== "N/A") agentName = agent;
+        if (!parsedAgentName && agent && agent !== "N/A") parsedAgentName = agent;
         if (!reportDate && reportDateStr) reportDate = reportDateStr;
         if (!block && blockStr) block = blockStr;
 
         if (isNaN(anp) || anp <= 0 || isNaN(monthsPaid)) continue;
 
-        const policyObj = { policyNo, agentName: agent, clientName, monthsPaid, anp, status, premiumDueDate };
+        const policyObj = { 
+          policyNo, 
+          agentName: agent || manualAgentInput || "N/A", 
+          clientName, 
+          monthsPaid, 
+          anp, 
+          status: status.toUpperCase(), 
+          premiumDueDate 
+        };
         allPolicies.push(policyObj);
         totalANP += anp;
 
@@ -440,16 +475,17 @@ Note: Skip total summary rows. Remove commas from numbers.</pre>
       }
 
       if (allPolicies.length === 0) {
-        alert("No valid policy data could be parsed. Check format.");
+        alert("No valid policy data could be parsed. Check data format.");
         return;
       }
 
+      const finalAgentName = manualAgentInput || parsedAgentName || "N/A";
       const persistencyRaw = totalANP === 0 ? 0 : (persistedANP / totalANP) * 100;
       const roundedPersistency = manulifeRound(persistencyRaw);
       const targetANP = totalANP * 0.85;
       const shortfall = Math.max(targetANP - persistedANP, 0);
 
-      // Rank saveable policies by priority
+      // Rank saveable policies
       let recommendedSaveable = [];
       if (shortfall > 0 && saveable.length > 0) {
         saveable.sort((a, b) => {
@@ -470,7 +506,7 @@ Note: Skip total summary rows. Remove commas from numbers.</pre>
       }
 
       reportState = {
-        agentName: agentName || "N/A",
+        agentName: finalAgentName,
         totalANP, persistedANP, roundedPersistency, shortfall,
         allPolicies, recommendedSaveable,
         reportDate: reportDate || "N/A", block: block || "N/A", threshold
@@ -487,13 +523,13 @@ Note: Skip total summary rows. Remove commas from numbers.</pre>
       }
 
       // KPI UI
-      document.getElementById("kpiAgentName").textContent = reportState.agentName;
+      document.getElementById("kpiAgentName").textContent = finalAgentName;
       document.getElementById("kpiTotalANP").textContent = `RM ${totalANP.toLocaleString(undefined, {minimumFractionDigits: 2})}`;
       document.getElementById("kpiPersistedANP").textContent = `RM ${persistedANP.toLocaleString(undefined, {minimumFractionDigits: 2})}`;
       document.getElementById("kpiPersistency").textContent = `${roundedPersistency}%`;
       document.getElementById("kpiShortfall").textContent = shortfall > 0 ? `RM ${shortfall.toLocaleString(undefined, {minimumFractionDigits: 2})}` : "RM 0.00";
 
-      // Saveable UI
+      // Saveable Table UI
       const saveableSection = document.getElementById("saveableSection");
       const saveableRows = document.getElementById("saveableRows");
 
@@ -542,6 +578,10 @@ Note: Skip total summary rows. Remove commas from numbers.</pre>
       const { jsPDF } = window.jspdf;
       const doc = new jsPDF("p", "mm", "a4");
 
+      const safeAgent = sanitizeText(reportState.agentName);
+      const safeReportDate = sanitizeText(reportState.reportDate);
+      const safeBlock = sanitizeText(reportState.block);
+
       doc.setFontSize(18);
       doc.setFont("helvetica", "bold");
       doc.text("Persistency Performance Report", 14, 20);
@@ -549,14 +589,14 @@ Note: Skip total summary rows. Remove commas from numbers.</pre>
       doc.setFontSize(10);
       doc.setFont("helvetica", "normal");
       doc.setTextColor(100);
-      doc.text(`Agent: ${reportState.agentName} | Report Date: ${reportState.reportDate} | Block: ${reportState.block}`, 14, 26);
+      doc.text(`Agent: ${safeAgent} | Report Date: ${safeReportDate} | Block: ${safeBlock}`, 14, 26);
 
-      // KPI Summary Table
+      // KPI Table
       doc.autoTable({
         startY: 32,
         head: [["Metric", "Value"]],
         body: [
-          ["Agent Name", reportState.agentName],
+          ["Agent Name", safeAgent],
           ["Total ANP", `RM ${reportState.totalANP.toLocaleString(undefined, {minimumFractionDigits: 2})}`],
           ["Persisted ANP", `RM ${reportState.persistedANP.toLocaleString(undefined, {minimumFractionDigits: 2})}`],
           [`Persistency % (${reportState.threshold}-Month)`, `${reportState.roundedPersistency}%`],
@@ -569,21 +609,21 @@ Note: Skip total summary rows. Remove commas from numbers.</pre>
 
       let currentY = doc.lastAutoTable.finalY + 10;
 
-      // Saveable Policies Table (If shortfall exists)
+      // Saveable Policies Table
       if (reportState.recommendedSaveable && reportState.recommendedSaveable.length > 0) {
         doc.setFontSize(12);
         doc.setFont("helvetica", "bold");
-        doc.setTextColor(217, 119, 6); // Warning Orange
+        doc.setTextColor(217, 119, 6);
         doc.text("Recommended Saveable Policies (To Hit 85% Target)", 14, currentY);
 
         const saveableRows = reportState.recommendedSaveable.map(p => [
-          p.policyNo,
-          p.agentName,
-          p.clientName,
+          sanitizeText(p.policyNo),
+          sanitizeText(p.agentName),
+          sanitizeText(p.clientName),
           `RM ${p.anp.toLocaleString(undefined, {minimumFractionDigits: 2})}`,
           p.monthsPaid,
-          statusLabels[p.status] || p.status,
-          p.premiumDueDate
+          sanitizeText(statusLabels[p.status] || p.status),
+          sanitizeText(p.premiumDueDate)
         ]);
 
         doc.autoTable({
@@ -591,7 +631,7 @@ Note: Skip total summary rows. Remove commas from numbers.</pre>
           head: [["Policy No", "Agent", "Client Name", "ANP", "Mths Paid", "Status", "Premium Due Date"]],
           body: saveableRows,
           theme: "grid",
-          styles: { fontSize: 8 },
+          styles: { fontSize: 8, font: "helvetica" },
           headStyles: { fillColor: [217, 119, 6], textColor: [255, 255, 255] }
         });
 
@@ -605,13 +645,13 @@ Note: Skip total summary rows. Remove commas from numbers.</pre>
       doc.text("Full Policy Listing", 14, currentY);
 
       const fullRows = reportState.allPolicies.map(p => [
-        p.policyNo,
-        p.agentName,
-        p.clientName,
+        sanitizeText(p.policyNo),
+        sanitizeText(p.agentName),
+        sanitizeText(p.clientName),
         `RM ${p.anp.toLocaleString(undefined, {minimumFractionDigits: 2})}`,
         p.monthsPaid,
-        statusLabels[p.status] || p.status,
-        p.premiumDueDate
+        sanitizeText(statusLabels[p.status] || p.status),
+        sanitizeText(p.premiumDueDate)
       ]);
 
       doc.autoTable({
@@ -619,20 +659,28 @@ Note: Skip total summary rows. Remove commas from numbers.</pre>
         head: [["Policy No", "Agent", "Client Name", "ANP", "Mths Paid", "Status", "Premium Due Date"]],
         body: fullRows,
         theme: "grid",
-        styles: { fontSize: 8 },
+        styles: { fontSize: 8, font: "helvetica" },
         headStyles: { fillColor: [230, 230, 230], textColor: [0, 0, 0] }
       });
 
-      doc.save(`Persistency_Report_${reportState.agentName.replace(/\s+/g, '_')}_${new Date().toISOString().slice(0,10)}.pdf`);
+      doc.save(`Persistency_Report_${safeAgent.replace(/\s+/g, '_')}_${new Date().toISOString().slice(0,10)}.pdf`);
     }
 
     window.addEventListener('DOMContentLoaded', () => {
       const dataInputEl = document.getElementById('dataInput');
+      const agentInputEl = document.getElementById('agentNameInput');
+
       const savedInput = localStorage.getItem('persistencyDataInput');
+      const savedAgent = localStorage.getItem('persistencyAgentName');
+
       if (savedInput && dataInputEl) dataInputEl.value = savedInput;
+      if (savedAgent && agentInputEl) agentInputEl.value = savedAgent;
 
       dataInputEl.addEventListener('input', function() {
         localStorage.setItem('persistencyDataInput', this.value);
+      });
+      agentInputEl.addEventListener('input', function() {
+        localStorage.setItem('persistencyAgentName', this.value);
       });
     });
   </script>
