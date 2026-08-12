@@ -242,7 +242,7 @@
       </div>
 
       <label class="section-label" for="agentNameInput">Agent Name (Optional Override)</label>
-      <input type="text" id="agentNameInput" placeholder="e.g. LOW HUI TZE" />
+      <input type="text" id="agentNameInput" placeholder="Leave blank to extract automatically from pasted data" />
 
       <details>
         <summary>📘 Copy ChatGPT extraction prompt</summary>
@@ -350,15 +350,15 @@ Note: Skip total summary rows. Remove commas from numbers.</pre>
 
     let reportState = {};
 
-    // Cleans non-breaking spaces, smart quotes, and unprintable unicode characters
+    // Sanitizes special non-breaking characters and symbols for clean rendering in jsPDF
     function sanitizeText(str) {
       if (!str) return "";
       return String(str)
-        .replace(/[\u1680\u180E\u2000-\u200B\u202F\u205F\u3000\uFEFF\u00A0]/g, ' ') // Non-breaking spaces to standard space
-        .replace(/[\u2018\u2019]/g, "'") // Smart single quotes
-        .replace(/[\u201C\u201D]/g, '"') // Smart double quotes
-        .normalize("NFD").replace(/[\u0300-\u036f]/g, "") // Remove accents
-        .replace(/[^\x20-\x7E]/g, "") // Keep printable ASCII only
+        .replace(/[\u1680\u180E\u2000-\u200B\u202F\u205F\u3000\uFEFF\u00A0]/g, ' ')
+        .replace(/[\u2018\u2019]/g, "'")
+        .replace(/[\u201C\u201D]/g, '"')
+        .normalize("NFD").replace(/[\u0300-\u036f]/g, "")
+        .replace(/[^\x20-\x7E]/g, "")
         .trim();
     }
 
@@ -376,7 +376,6 @@ Note: Skip total summary rows. Remove commas from numbers.</pre>
     }
 
     function loadSampleData() {
-      document.getElementById("agentNameInput").value = "LOW HUI TZE";
       const sample = 
 `00961338, LOW HUI TZE, CHUA LIAN KHIM, 24, 19999.98, IP, 04-OCT-2026, 01-AUG-2024 to 31-JUL-2025, 04/08/2026
 00955391, LOW HUI TZE, CHAN LEE CHING, 23, 3600.00, IP, 02-JUL-2026, 01-AUG-2024 to 31-JUL-2025, 04/08/2026
@@ -404,7 +403,7 @@ Note: Skip total summary rows. Remove commas from numbers.</pre>
 
     function calculate() {
       const raw = document.getElementById("dataInput").value.trim();
-      const manualAgentInput = sanitizeText(document.getElementById("agentNameInput").value);
+      const manualOverrideAgent = sanitizeText(document.getElementById("agentNameInput").value);
 
       if (!raw) {
         alert("Please paste data first.");
@@ -420,7 +419,7 @@ Note: Skip total summary rows. Remove commas from numbers.</pre>
       let allPolicies = [];
       let reportDate = "";
       let block = "";
-      let parsedAgentName = "";
+      let extractedAgentName = "";
 
       for (let line of lines) {
         const parts = line.split(/,|\t/).map(s => sanitizeText(s)).filter(Boolean);
@@ -428,15 +427,14 @@ Note: Skip total summary rows. Remove commas from numbers.</pre>
 
         let policyNo, agent, clientName, monthsPaidStr, anpStr, status, premiumDueDate, blockStr, reportDateStr;
 
-        // Flexible column mapping fallback
         if (parts.length >= 9) {
           [policyNo, agent, clientName, monthsPaidStr, anpStr, status, premiumDueDate, blockStr, reportDateStr] = parts;
         } else if (parts.length === 8) {
           [policyNo, clientName, monthsPaidStr, anpStr, status, premiumDueDate, blockStr, reportDateStr] = parts;
-          agent = manualAgentInput || "N/A";
+          agent = manualOverrideAgent || extractedAgentName || "N/A";
         } else {
           policyNo = parts[0];
-          agent = manualAgentInput || "N/A";
+          agent = manualOverrideAgent || parts[1] || "N/A";
           clientName = parts[1] || "N/A";
           monthsPaidStr = parts[2];
           anpStr = parts[3];
@@ -449,7 +447,11 @@ Note: Skip total summary rows. Remove commas from numbers.</pre>
         const monthsPaid = parseInt(monthsPaidStr);
         const anp = parseFloat(anpStr ? anpStr.replace(/,/g, '') : "0");
 
-        if (!parsedAgentName && agent && agent !== "N/A") parsedAgentName = agent;
+        // Extract and capture the first valid agent name found in the data
+        if (!extractedAgentName && agent && agent !== "N/A") {
+          extractedAgentName = agent;
+        }
+
         if (!reportDate && reportDateStr) reportDate = reportDateStr;
         if (!block && blockStr) block = blockStr;
 
@@ -457,7 +459,7 @@ Note: Skip total summary rows. Remove commas from numbers.</pre>
 
         const policyObj = { 
           policyNo, 
-          agentName: agent || manualAgentInput || "N/A", 
+          agentName: agent || manualOverrideAgent || extractedAgentName || "N/A", 
           clientName, 
           monthsPaid, 
           anp, 
@@ -479,13 +481,19 @@ Note: Skip total summary rows. Remove commas from numbers.</pre>
         return;
       }
 
-      const finalAgentName = manualAgentInput || parsedAgentName || "N/A";
+      // Priority of Agent Name selection: Manual Override -> Extracted from CSV -> Default Fallback
+      const finalAgentName = manualOverrideAgent || extractedAgentName || "N/A";
+
+      // Re-assign finalAgentName to all policies if any row missed it
+      allPolicies.forEach(p => {
+        if (p.agentName === "N/A") p.agentName = finalAgentName;
+      });
+
       const persistencyRaw = totalANP === 0 ? 0 : (persistedANP / totalANP) * 100;
       const roundedPersistency = manulifeRound(persistencyRaw);
       const targetANP = totalANP * 0.85;
       const shortfall = Math.max(targetANP - persistedANP, 0);
 
-      // Rank saveable policies
       let recommendedSaveable = [];
       if (shortfall > 0 && saveable.length > 0) {
         saveable.sort((a, b) => {
@@ -522,7 +530,7 @@ Note: Skip total summary rows. Remove commas from numbers.</pre>
         statusBanner.innerHTML = `<span>⚠️ Target Shortfall (85%)</span><span>${roundedPersistency}%</span>`;
       }
 
-      // KPI UI
+      // KPI Dashboard UI
       document.getElementById("kpiAgentName").textContent = finalAgentName;
       document.getElementById("kpiTotalANP").textContent = `RM ${totalANP.toLocaleString(undefined, {minimumFractionDigits: 2})}`;
       document.getElementById("kpiPersistedANP").textContent = `RM ${persistedANP.toLocaleString(undefined, {minimumFractionDigits: 2})}`;
@@ -582,16 +590,18 @@ Note: Skip total summary rows. Remove commas from numbers.</pre>
       const safeReportDate = sanitizeText(reportState.reportDate);
       const safeBlock = sanitizeText(reportState.block);
 
+      // Title Section
       doc.setFontSize(18);
       doc.setFont("helvetica", "bold");
       doc.text("Persistency Performance Report", 14, 20);
 
+      // Sub-Header Metadata Line with Agent Name
       doc.setFontSize(10);
       doc.setFont("helvetica", "normal");
       doc.setTextColor(100);
       doc.text(`Agent: ${safeAgent} | Report Date: ${safeReportDate} | Block: ${safeBlock}`, 14, 26);
 
-      // KPI Table
+      // Summary Table
       doc.autoTable({
         startY: 32,
         head: [["Metric", "Value"]],
@@ -609,7 +619,7 @@ Note: Skip total summary rows. Remove commas from numbers.</pre>
 
       let currentY = doc.lastAutoTable.finalY + 10;
 
-      // Saveable Policies Table
+      // Saveable Policies Table in PDF
       if (reportState.recommendedSaveable && reportState.recommendedSaveable.length > 0) {
         doc.setFontSize(12);
         doc.setFont("helvetica", "bold");
@@ -638,7 +648,7 @@ Note: Skip total summary rows. Remove commas from numbers.</pre>
         currentY = doc.lastAutoTable.finalY + 10;
       }
 
-      // Full Policy Listing Table
+      // Full Policy Listing Table in PDF
       doc.setFontSize(12);
       doc.setFont("helvetica", "bold");
       doc.setTextColor(0, 0, 0);
