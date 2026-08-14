@@ -111,7 +111,7 @@
       font-size: 14px;
       font-weight: 600;
       color: var(--text-secondary);
-      border-radius: 9px;
+      border-radius: 99px;
       cursor: pointer;
       transition: all 0.2s cubic-bezier(0.16, 1, 0.3, 1);
     }
@@ -341,11 +341,13 @@
       <input type="text" id="agentNameInput" placeholder="Leave blank to extract automatically from pasted data" />
 
       <details>
-        <summary>📘 Show Extraction Guide</summary>
+        <summary>📘 Show Direct Raw Text / AI Extraction Guide</summary>
         <div class="guide">
-          <div class="guide-step"><strong>Step 1:</strong> Open the Manulife report (PDF or scanned text).</div>
-          <div class="guide-step"><strong>Step 2:</strong> Copy the whole table content (including headers).</div>
-          <div class="guide-step"><strong>Step 3:</strong> In ChatGPT / AI Chatbot, paste the content along with this prompt:</div>
+          <div class="guide-step"><strong>Option A: Direct Raw Paste (Fastest)</strong></div>
+          <div class="guide-step">Simply copy the table text directly from the Manulife PDF report and paste it straight into the box below. The smart parser automatically handles tabs, spaces, and header metadata.</div>
+          
+          <div class="guide-step" style="margin-top: 16px;"><strong>Option B: AI Cleaned CSV</strong></div>
+          <div class="guide-step">Copy the PDF content and ask ChatGPT / AI Chatbot to convert it to CSV using this prompt:</div>
           <pre style="margin-top: 10px; white-space: pre-wrap;"><code id="hiddenPrompt">Please extract all policy details from the attached/copied Manulife report into raw CSV format.
 
 Output Format (CSV):
@@ -355,19 +357,15 @@ Example Output Line:
 00999998, LEI HOU YEH, MOU TAK DENG, 10, 3600.00, LC, 14-JUL-2025, 01-JUN-2023 to 31-MAY-2024, 11/07/2025
 
 Extraction Rules:
-1. ONLY return the plain CSV lines. Do NOT include markdown code blocks (```), introductory text, explanations, or column header lines in the final output.
-2. Only include actual individual policy rows (skip page headers, sub-totals, section titles, or summary rows like "Policy Cnt / Total ANP").
-3. Extract every policy row regardless of sub-headings (e.g. "OL", "RPIL", or other issue-type groupings).
-4. PersistencyBlock = The date range near the top of the report (e.g., "01-JUN-2023 to 31-MAY-2024"). Repeat this exact value on every row.
-5. ReportDate = The report date in the top corner (e.g., "11/07/2025"). Repeat this exact value on every row.
-6. Number Formatting: Remove ALL commas/thousand separators from numeric amounts (e.g., use 3600.00, NOT 3,600.00). Keep exact decimal values.</code></pre>
+1. ONLY return the plain CSV lines. Do NOT include markdown code blocks (```), introductory text, explanations, or column header lines.
+2. Only include actual individual policy rows (skip page headers, sub-totals, or summary rows).
+3. Number Formatting: Remove ALL commas/thousand separators from numeric amounts (e.g., 3600.00, NOT 3,600.00).</code></pre>
           <button type="button" class="copy-button" onclick="copyPrompt()">📋 Copy Prompt</button>
-          <div class="guide-step" style="margin-top: 12px;"><strong>Step 4:</strong> Copy the cleaned CSV result from the AI and paste it into the input area below.</div>
         </div>
       </details>
 
-      <label class="section-label" for="dataInput">Parsed Data Input / CSV</label>
-      <textarea id="dataInput" rows="7" placeholder="PolicyNo, AgentName, ClientName, MonthsPaid, PsistANP, Status, PremiumDueDate, PersistencyBlock, ReportDate"></textarea>
+      <label class="section-label" for="dataInput">Data Input (Paste Raw PDF Text or AI CSV)</label>
+      <textarea id="dataInput" rows="8" placeholder="Paste raw report text directly from PDF or CSV lines here..."></textarea>
 
       <div class="button-group">
         <button type="button" class="btn-primary" onclick="calculate()">Calculate Dashboard</button>
@@ -540,7 +538,6 @@ Extraction Rules:
     }
 
     function renderTables() {
-      // Saveable Policies
       const saveableContainer = document.getElementById("saveableRows");
       const saveableSection = document.getElementById("saveableSection");
       
@@ -564,7 +561,6 @@ Extraction Rules:
         saveableSection.classList.add("hidden");
       }
 
-      // All Policies
       const policyContainer = document.getElementById("policyRows");
       policyContainer.innerHTML = "";
       reportState.allPolicies.forEach(p => {
@@ -582,6 +578,30 @@ Extraction Rules:
       });
     }
 
+    // Direct Metadata Extraction from Raw PDF Text Block
+    function extractDocumentMetadata(rawText) {
+      let block = "";
+      let reportDate = "";
+      let agentName = "";
+
+      // Date Block Range e.g. "01-AUG-2024 to 31-JUL-2025"
+      const blockMatch = rawText.match(/(\d{2}[-/\.][A-Za-z0-9]{3}[-/\.]\d{2,4}\s+(?:to|-)\s+\d{2}[-/\.][A-Za-z0-9]{3}[-/\.]\d{2,4})/i);
+      if (blockMatch) block = blockMatch[1].trim();
+
+      // Report Date e.g. "Report Date: 04/08/2026" or "04/08/2026"
+      const reportDateMatch = rawText.match(/(?:Report\s*Date\s*[:\.-]?\s*)?(\d{2}[-/\.]\d{2}[-/\.]\d{4})/i);
+      if (reportDateMatch) reportDate = reportDateMatch[1].trim();
+
+      // Agent Name from Header pattern "Agent: LEI HOU YEH"
+      const agentMatch = rawText.match(/(?:Agent\s*(?:Name)?\s*[:\.-]?\s*)([A-Z\s]{3,35})(?:\r?\n|$|,)/i);
+      if (agentMatch && !/policy|status|amount|anp|months/i.test(agentMatch[1])) {
+        agentName = agentMatch[1].trim();
+      }
+
+      return { block, reportDate, agentName };
+    }
+
+    // MAIN CALCULATION & DATA PARSING LOGIC
     function calculate() {
       const raw = document.getElementById("dataInput").value.trim();
       const manualOverrideAgent = sanitizeText(document.getElementById("agentNameInput")?.value);
@@ -592,50 +612,98 @@ Extraction Rules:
       }
 
       const threshold = parseInt(document.querySelector('input[name="persistencyType"]:checked').value);
-      const lines = raw.split("\n");
+      const docMeta = extractDocumentMetadata(raw);
 
       let totalANP = 0;
       let persistedANP = 0;
       let unpersistedCandidates = [];
       let allPolicies = [];
-      let extractedReportDate = "";
-      let extractedBlock = "";
-      let extractedAgentName = "";
+      let extractedReportDate = docMeta.reportDate;
+      let extractedBlock = docMeta.block;
+      let extractedAgentName = docMeta.agentName;
+
+      const lines = raw.split("\n");
 
       for (let line of lines) {
-        if (!line.trim()) continue;
+        const cleanLine = sanitizeText(line);
+        if (!cleanLine) continue;
 
-        const parts = line.split(/,|\t/).map(s => sanitizeText(s));
-        if (parts.length < 4) continue;
-
-        let policyNo = "";
-        let agent = "";
-        let clientName = "";
-        let monthsPaidStr = "";
-        let anpStr = "";
-        let status = "";
-        let premiumDueDate = "";
-        let blockStr = "";
-        let reportDateStr = "";
-
-        if (parts.length >= 9) {
-          [policyNo, agent, clientName, monthsPaidStr, anpStr, status, premiumDueDate, blockStr, reportDateStr] = parts;
-        } else if (parts.length === 8) {
-          [policyNo, clientName, monthsPaidStr, anpStr, status, premiumDueDate, blockStr, reportDateStr] = parts;
-          agent = manualOverrideAgent || extractedAgentName || "N/A";
-        } else {
-          [policyNo, agent, clientName, monthsPaidStr, anpStr, status, premiumDueDate] = parts;
+        // Skip table headers and summary/footer rows
+        if (/policy\s*no|agent\s*name|client\s*name|policy\s*cnt|total\s*anp|page\s*\d+/i.test(cleanLine)) {
+          continue;
         }
 
-        const monthsPaid = parseInt(monthsPaidStr);
+        let policyNo = "", agent = "", clientName = "", monthsPaidStr = "", anpStr = "", status = "", premiumDueDate = "", blockStr = "", reportDateStr = "";
+
+        // Check if line is CSV formatted (contains commas)
+        if (cleanLine.includes(",")) {
+          const parts = cleanLine.split(",").map(s => s.trim());
+          if (parts.length < 4) continue;
+
+          if (parts.length >= 9) {
+            [policyNo, agent, clientName, monthsPaidStr, anpStr, status, premiumDueDate, blockStr, reportDateStr] = parts;
+          } else if (parts.length === 8) {
+            [policyNo, clientName, monthsPaidStr, anpStr, status, premiumDueDate, blockStr, reportDateStr] = parts;
+            agent = manualOverrideAgent || extractedAgentName || "N/A";
+          } else {
+            [policyNo, agent, clientName, monthsPaidStr, anpStr, status, premiumDueDate] = parts;
+          }
+        } 
+        // Direct Raw Text Parsing (Space/Tab delimited from PDF)
+        else {
+          // Standard Raw Row Regex: PolicyNo (7-10 digits), Names, MonthsPaid (1-3 digits), ANP, Status (2 letters), Due Date
+          const rawMatch = cleanLine.match(/^(\d{7,10})\s+(.+?)\s+(\d{1,3})\s+([\d,]+\.?\d*)\s+([A-Z]{2})(?:\s+(\d{2}[-/\.][A-Za-z0-9]{3,4}[-/\.]\d{2,4}))?/i);
+          
+          if (rawMatch) {
+            policyNo = rawMatch[1];
+            let nameCombined = rawMatch[2].trim();
+            monthsPaidStr = rawMatch[3];
+            anpStr = rawMatch[4];
+            status = rawMatch[5];
+            premiumDueDate = rawMatch[6] || "N/A";
+
+            // Disambiguate Agent vs Client from combined name string
+            const activeAgent = manualOverrideAgent || extractedAgentName;
+            if (activeAgent && nameCombined.toUpperCase().startsWith(activeAgent.toUpperCase())) {
+              agent = activeAgent;
+              clientName = nameCombined.substring(activeAgent.length).trim() || "N/A";
+            } else {
+              // Split by double space if tab/space separation exists between Agent and Client
+              const nameParts = nameCombined.split(/\s{2,}/);
+              if (nameParts.length >= 2) {
+                agent = nameParts[0].trim();
+                clientName = nameParts.slice(1).join(" ").trim();
+              } else {
+                clientName = nameCombined;
+                agent = activeAgent || "N/A";
+              }
+            }
+          } else {
+            // Fallback tab split
+            const tabParts = cleanLine.split(/\t+/).map(s => s.trim());
+            if (tabParts.length >= 5 && /^\d{7,10}$/.test(tabParts[0])) {
+              policyNo = tabParts[0];
+              clientName = tabParts[1];
+              monthsPaidStr = tabParts[2];
+              anpStr = tabParts[3];
+              status = tabParts[4];
+              premiumDueDate = tabParts[5] || "N/A";
+            } else {
+              continue; // Not a policy row
+            }
+          }
+        }
+
+        const monthsPaid = parseInt(monthsPaidStr, 10);
         const anp = parseFloat(anpStr ? anpStr.replace(/,/g, '') : "0");
 
-        if (isNaN(anp) || isNaN(monthsPaid) || anp <= 0) continue;
+        if (isNaN(anp) || isNaN(monthsPaid) || anp <= 0 || !policyNo) continue;
 
+        // Capture metadata if row carried explicit block or date
         if (!extractedAgentName && agent && agent !== "N/A" && !/agent/i.test(agent)) {
           extractedAgentName = agent;
         }
-        if (!extractedReportDate && reportDateStr && !/report\s*date/i.test(reportDateStr)) {
+        if (!extractedReportDate && reportDateStr && !/report/i.test(reportDateStr)) {
           extractedReportDate = reportDateStr;
         }
         if (!extractedBlock && blockStr && !/block/i.test(blockStr)) {
@@ -644,7 +712,7 @@ Extraction Rules:
 
         const policyObj = { 
           policyNo, 
-          agentName: agent || manualOverrideAgent || "N/A", 
+          agentName: agent || manualOverrideAgent || extractedAgentName || "N/A", 
           clientName: clientName || "N/A", 
           monthsPaid, 
           anp, 
@@ -677,7 +745,7 @@ Extraction Rules:
       const targetANP = totalANP * 0.85;
       const shortfall = Math.max(targetANP - persistedANP, 0);
 
-      // Prioritized Saveable Policies Selection
+      // Priority Saveable Policy Selection logic
       let saveable = [];
       if (shortfall > 0 && unpersistedCandidates.length > 0) {
         unpersistedCandidates.sort((a, b) => {
@@ -719,7 +787,7 @@ Extraction Rules:
       document.getElementById("resultsCard").classList.remove("hidden");
     }
 
-    // Shared PDF Generator
+    // PDF Report Generator
     function generatePDFDoc() {
       if (!reportState.allPolicies) return null;
 
