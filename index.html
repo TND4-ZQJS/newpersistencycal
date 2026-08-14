@@ -463,7 +463,7 @@ Extraction Rules:
                 <th>Policy No</th>
                 <th>Agent</th>
                 <th>Client Name</th>
-                <th>ANP (RM)</th>
+                <th>Psist ANP (RM)</th>
                 <th>Months</th>
                 <th>Status</th>
                 <th>Premium Due Date</th>
@@ -484,7 +484,7 @@ Extraction Rules:
                 <th>Policy No</th>
                 <th>Agent</th>
                 <th>Client Name</th>
-                <th>ANP (RM)</th>
+                <th>Psist ANP (RM)</th>
                 <th>Months</th>
                 <th>Status</th>
                 <th>Premium Due Date</th>
@@ -581,17 +581,17 @@ Extraction Rules:
 Dist Chnl/Region : WA / WM
 AM / DM          : DULIFE DU LIFE GROUP SDN. BHD.
 UM / SM          : DULIFE DU LIFE GROUP SDN. BHD.
-Agent            :        FOO HUI YEE                                Status:  A
+Agent            :        LEI HOU YEH                                Status:  A
 RPIL AUG-2024 . @@<ProductLine>
 ------------
-  00956627      LOW CHUNG MING             NO 12, TMN FOUR SEA FASA 2       14-AUG-2024 14-AUG-2026   24     IP   MLES8Z    5004.00      5004.00     N        NO      Y        Y
+  00956627      CHAN HOU             NO 12, TMN 888 2       14-AUG-2024 14-AUG-2026   24     IP   MLES8Z    5004.00      5004.00     N        NO      Y        Y
                                            JALAN LAMA
 RPIL NOV-2024 . @@<ProductLine>
 ------------
-  00966114      WONG FEI MIN               5, JLN EMAS, TMN BUKIT MAKMUR    20-NOV-2024 20-AUG-2026   21     IP   MLES8Z    3840.00      3840.00     N        NO      Y        Y
+  00966114      GAM DOU TAK               5, JLN PELANGI, TMN APA MAKMUR    20-NOV-2024 20-AUG-2026   21     IP   MLES8Z    3840.00      3840.00     N        NO      Y        Y
                                            BULOH KASAP
-  00965707      LUM YI WEN                 A-10-2 SETAPAK RIA CONDO         24-NOV-2024 24-AUG-2026   21     IP   MLES8Z    1200.00      1200.00     N        NO      Y        Y
-                                           JALAN GENTING KLANG, SETAPAK`;
+  00965707      CHONG KAH FEI                 A-10-9 SETAPAK GEMBIRA CONDO         24-NOV-2024 24-AUG-2026   21     IP   MLES8Z    1200.00      1200.00     N        NO      Y        Y
+                                           JALAN GENTING PJ, SETAPAK`;
       } else {
         document.getElementById("csvInput").value = 
 `00961338, LEI HOU YEH, CHAN HOU, 24, 19999.98, IP, 04-OCT-2026, 01-AUG-2024 to 31-JUL-2025, 04/08/2026
@@ -922,7 +922,7 @@ function calculate() {
 
         doc.autoTable({
           startY: currentY + 4,
-          head: [["Policy No", "Agent", "Client Name", "ANP", "Mths Paid", "Status", "Premium Due Date"]],
+          head: [["Policy No", "Agent", "Client Name", "Psist ANP", "Mths Paid", "Status", "Premium Due Date"]],
           body: saveableRows,
           theme: "grid",
           styles: { fontSize: 8, font: "helvetica" },
@@ -949,7 +949,7 @@ function calculate() {
 
       doc.autoTable({
         startY: currentY + 4,
-        head: [["Policy No", "Agent", "Client Name", "ANP", "Mths Paid", "Status", "Premium Due Date"]],
+        head: [["Policy No", "Agent", "Client Name", "Psist ANP", "Mths Paid", "Status", "Premium Due Date"]],
         body: fullRows,
         theme: "grid",
         styles: { fontSize: 8, font: "helvetica" },
