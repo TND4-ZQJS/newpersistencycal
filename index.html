@@ -696,31 +696,45 @@ function calculate() {
     extractedBlock = blockMatch ? blockMatch[1].trim() : "";
     extractedReportDate = dateMatch ? dateMatch[1].trim() : "";
 
-    /* 
-      Updated Robust Regex:
-      Group 1: Policy No (8 digits)
-      Group 2: Insured / Client Name
-      Group 3: Last Premium Due Date
-      Group 4: Months Paid
-      Group 5: Status (IP, LC, TC, LA, etc.)
-      Group 6: Plan Code
-      Group 7: Total ANP
-      Group 8: Persisted ANP
+    /*
+      Updated Robust Parser for Raw Lines:
+      Handles varying column spaces, long names (e.g. BINTI / A/L), OL, and RPIL lines.
     */
-    const rawPolicyRegex = /^\s*(\d{8})\s+([A-Za-z\s'\/\.\-]+?)\s{2,}.*?\d{2}-[A-Za-z]{3}-\d{4}\s+(\d{2}-[A-Za-z]{3}-\d{4})\s+(\d+)\s+([A-Z]{2})\s+([A-Za-z0-9]+)\s+([\d\.]+)\s+([\d\.]+)/gm;
+    const lines = rawText.split("\n");
+    
+    // Regex for policy line detection
+    // Group 1: Policy No
+    // Group 2: Client Name & Address chunk up to Policy Date
+    // Group 3: Last Premium Due Date
+    // Group 4: Months Paid
+    // Group 5: Status
+    // Group 6: Plan Code
+    // Group 7: Total ANP
+    const lineRegex = /^\s*(\d{8})\s+([A-Za-z0-9\s'\/\.\-,\#]+?)\s+(\d{2}-[A-Za-z]{3}-\d{4})\s+(\d{2}-[A-Za-z]{3}-\d{4})\s+(\d+)\s+([A-Z]{2})\s+([A-Za-z0-9]+)\s+([\d\.]+)/;
 
-    let match;
-    while ((match = rawPolicyRegex.exec(rawText)) !== null) {
-      const [, policyNo, clientName, premiumDueDate, monthsPaidStr, status, plan, totalAnpStr, psistAnpStr] = match;
+    for (let line of lines) {
+      const match = line.match(lineRegex);
+      if (!match) continue;
+
+      const [, policyNo, rawNameAddrChunk, policyDate, premiumDueDate, monthsPaidStr, status, plan, totalAnpStr] = match;
+      
       const monthsPaid = parseInt(monthsPaidStr, 10);
       const anp = parseFloat(totalAnpStr.replace(/,/g, ''));
 
       if (isNaN(anp) || isNaN(monthsPaid) || anp <= 0) continue;
 
+      // Cleanly separate Client Name from the start of Address Chunk
+      // Look for boundary where capital text ends before street/unit info or address keywords
+      let clientName = rawNameAddrChunk.trim();
+      const addrSplit = clientName.split(/\s{2,}|\s+(?=\d+|NO|LOT|JALAN|JLN|TAMAN|TMN|PERSIARAN|LORONG|LEVEL|FLOOR|BLOCK|BLK|UNIT|A-|B-|C-|D-|J5120)/i);
+      if (addrSplit.length > 1) {
+        clientName = addrSplit[0].trim();
+      }
+
       const policyObj = {
         policyNo,
         agentName: manualOverrideAgent || extractedAgentName || "N/A",
-        clientName: clientName.trim(),
+        clientName: clientName || "N/A",
         monthsPaid,
         anp,
         status: status.toUpperCase(),
